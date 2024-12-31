@@ -49,5 +49,3 @@ for a in range(1<<8):
 # Affichage de la DDT de la boîte-S de l'AES
 """ for a in range(1<<8):
     print(DDT[a]) """
-
-# Test git
