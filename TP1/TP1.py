@@ -1,4 +1,9 @@
-""" On rappelle qu'une Boite-S est une application : F_{2^n} -> F_{2^n} 
+""" _______________________________________________________________________________________
+    |                              Partie 1 - Boîte-S de l'AES                             |
+    |______________________________________________________________________________________| """
+
+""" Question 1:
+    On rappelle qu'une Boite-S est une application : F_{2^n} -> F_{2^n} 
     Dans le cas de l'AES, on a n=8, il s'agit donc d'une fonction qui envoit un octet
     sur un autre. Voici le tableau des images de la boîte S utilisée dans le chiffrement AES, 
     ainsi que la fonction S_AES qui définit directement cette boîte-S :     """
@@ -49,3 +54,6 @@ for a in range(1<<8):
 # Affichage de la DDT de la boîte-S de l'AES
 """ for a in range(1<<8):
     print(DDT[a]) """
+
+""" Question 2:
+         """
