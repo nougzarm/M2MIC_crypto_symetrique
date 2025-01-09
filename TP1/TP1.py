@@ -92,8 +92,67 @@ print(s)
 
 """ Application : Le module sage.crypto.sbox.SBox de SageMath est très pratique pour calculer  de
         diverses propriétés (cryptographiques) des boîtes-S. On utilise ce module pour calculer la 
-        forme algébrique normale de chacune des 8 coordonnées de la boîte-S de l’AES.  """
+        forme algébrique normale de chacune des fonctions coordonnées d'une boîte-S.  """
 
-from sage.all import *
-from sage.crypto.sbox import SBox
+# from sage.all import *
+from sage.crypto.boolean_function import BooleanFunction
+import sage.rings.polynomial.pbori
 
+""" Premier exemple : Commençons par l'exemple de la feuille de TP : 
+        On se donne la Boite-S S : F_{2^3} -> F_{2^3} suivante :    """
+
+S_exemple = [3, 1, 6, 7, 0, 5, 2, 4]
+
+def traitement_exemple1(Boite_S_ex):
+    # Calcul des fonctions coordonnées de la boite-S exemple
+    s_ex_i = [[] for i in range(3)]
+    for i in range(3):
+        for x in range(1<<3):
+            s_ex_i[i].append(Boite_S_ex[x]>>i & 1)
+
+    # Affichage des fonctions coordonnées (dé-commenter si nécessaire)
+    for i in range(3):
+        print(s_ex_i[i])
+
+    # Conversion dans l'env sagemath et forme algébrique normale
+    B_ex_i = []
+    P_ex_i = []
+    for i in range(3):
+        B_ex_i.append(BooleanFunction(s_ex_i[i]))
+        P_ex_i.append(B_ex_i[i].algebraic_normal_form())
+        # Affichage du polynome (dé-commenter si nécessaire) :
+        print(P_ex_i[i])
+
+# Traitement exemple (dé-commenter):
+# traitement_exemple1(S_exemple)
+
+""" Remarque :
+        Etant donnée une fonction booléenne f : F_{2^n} -> F_2 et F sa forme normale
+        algébrique générée par la librairie sagemath, pour calculer f(x), on compose
+        F(x_0, x_1, ..., x_{n-1}) où x_0 est le bit de poid FAIBLE (tout à droite) de x """
+
+
+""" # Calculs fonctions coordonnées de la boîte-S de l'AES
+s_i = [[] for i in range(8)]
+for i in range(8):
+    for x in range(1<<8):
+        s_i[i].append(S_AES_i(i, x))
+    # print(s_i[i])
+
+# Tests
+s = 0
+for i in range(8):
+    s=s+s_i[i][0x01]*(2**i)
+print(s)
+
+# Conversion des fonctions coordonnées vers l'environnement sagemath
+B_i = []
+P_i = []
+for i in range(8):
+    B_i.append(BooleanFunction(s_i[i]))
+    P_i.append(B_i[i].algebraic_normal_form())
+    # Affichage du polynome :
+    # print(P_i[i])
+    print(P_i[i](s_i[0][0x01], s_i[1][0x01], s_i[2][0x01], s_i[3][0x01], s_i[4][0x01], s_i[5][0x01], s_i[6][0x01], s_i[7][0x01]))
+    print(s_i[i][0x01])
+ """
