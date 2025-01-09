@@ -1,6 +1,6 @@
-""" _______________________________________________________________________________________
-    |                              Partie 1 - Boîte-S de l'AES                             |
-    |______________________________________________________________________________________| """
+""" ___________________________________________________________________________________________________
+    |                                     Partie 1 - Boîte-S de l'AES                                  |
+    |__________________________________________________________________________________________________| """
 
 """ QUESTION 1:
     Rappel : Une Boite-S est une application : F_{2^n} -> F_{2^m} 
@@ -31,9 +31,9 @@ def S_AES(x):
     colonne = x%16
     return Boite_S_AES[x//16][x%16]
 
-# Quelques tests :
-print(S_AES(0x01)) # -> 0x7c = 124
-print(S_AES(0x2f)) # -> 0x15 = 21
+# Quelques tests (dé-commenter si nécessaire) :
+""" print(S_AES(0x01)) # -> 0x7c = 124
+print(S_AES(0x2f)) # -> 0x15 = 21 """
 
 """ Rappel: Table de distribution des différences (DDT)
         Soit S : F_{2^n} -> F_{2^n}  une boite-S. La DDT de S est une table de dimensions 2^n*2^n,
@@ -64,8 +64,8 @@ for a in range(1<<8):
                         S(x) = (s_0(x), s_1(x), ..., s_{m-1}(x))    
         où x \\in F_{2^n}.
     
-    Remarque : Il est parfois préferable de représenter une boîte-S en utilisant la forme normale algébrique (ANF)
-        de ses fonctions coordonnées.
+    Remarque : Il est parfois préferable de représenter une boîte-S en utilisant la forme normale 
+        algébrique (ANF) de ses fonctions coordonnées.
     
     Rappel/déf : Soit f une fonction booléenne en n variables. La forme algébrique normale de f est :
                         f(x) = \\bigoplus_{u \\in F_{2^n}} c_f(u)x^u
@@ -76,19 +76,8 @@ for a in range(1<<8):
 
 # Fonction permettant d'extraire des fonctions coordonnées de la Boîte-S de l'AES
 def S_AES_i(i, x):
-    # Décalage de l'octet de i bit vers la droite et applic. masque
+    # Décalage de l'octet de i bit vers la droite et applic. du masque
     return (S_AES(x) >> i) & 1  
-
-# Tests
-s = 0
-for i in range(8):
-    s=s+S_AES_i(i, 0x01)*(2**i)
-print(s)
-s = 0
-for i in range(8):
-    s=s+S_AES_i(i, 0x2f)*(2**i)
-print(s)
-
 
 """ Application : Le module sage.crypto.sbox.SBox de SageMath est très pratique pour calculer  de
         diverses propriétés (cryptographiques) des boîtes-S. On utilise ce module pour calculer la 
@@ -96,7 +85,6 @@ print(s)
 
 # from sage.all import *
 from sage.crypto.boolean_function import BooleanFunction
-import sage.rings.polynomial.pbori
 
 """ Premier exemple : Commençons par l'exemple de la feuille de TP : 
         On se donne la Boite-S S : F_{2^3} -> F_{2^3} suivante :    """
@@ -129,30 +117,37 @@ def traitement_exemple1(Boite_S_ex):
 """ Remarque :
         Etant donnée une fonction booléenne f : F_{2^n} -> F_2 et F sa forme normale
         algébrique générée par la librairie sagemath, pour calculer f(x), on compose
-        F(x_0, x_1, ..., x_{n-1}) où x_0 est le bit de poid FAIBLE (tout à droite) de x """
+        F(x_0, x_1, ..., x_{n-1}) où x_0 est le bit de poid FAIBLE (tout à droite) de x 
+        
+    Cas de l'AES : Passons à présent au cas de l'AES    """
 
-
-""" # Calculs fonctions coordonnées de la boîte-S de l'AES
+# Calculs fonctions coordonnées de la boîte-S de l'AES
 s_i = [[] for i in range(8)]
 for i in range(8):
     for x in range(1<<8):
         s_i[i].append(S_AES_i(i, x))
-    # print(s_i[i])
 
-# Tests
-s = 0
-for i in range(8):
-    s=s+s_i[i][0x01]*(2**i)
-print(s)
+# Affichage des fonctions coordonnées (dé-commenter si nécessaire)
+""" for i in range(8):
+    print(s_i[i]) """
 
 # Conversion des fonctions coordonnées vers l'environnement sagemath
-B_i = []
-P_i = []
+B_i = []    # Liste des BooleanFunction's
+P_i = []    # Liste des ANF correspondantes
 for i in range(8):
     B_i.append(BooleanFunction(s_i[i]))
     P_i.append(B_i[i].algebraic_normal_form())
-    # Affichage du polynome :
-    # print(P_i[i])
-    print(P_i[i](s_i[0][0x01], s_i[1][0x01], s_i[2][0x01], s_i[3][0x01], s_i[4][0x01], s_i[5][0x01], s_i[6][0x01], s_i[7][0x01]))
-    print(s_i[i][0x01])
- """
+
+# Affichage des ANF (dé-commenter si nécessaire)
+""" for i in range(8):
+    print(P_i[i]) """
+
+# Tests pour 1, 2 et 3 (dé-commenter si nécessaire)
+""" print([P_i[i](1, 0, 0, 0, 0, 0, 0, 0) for i in range(8)])
+print([P_i[i](0, 1, 0, 0, 0, 0, 0, 0) for i in range(8)])
+print([P_i[i](1, 1, 0, 0, 0, 0, 0, 0) for i in range(8)]) """
+
+
+""" ___________________________________________________________________________________________________
+    |                  Partie 2 - Résistance de l’AES à la cryptanalyse différentielle                 |
+    |__________________________________________________________________________________________________| """
