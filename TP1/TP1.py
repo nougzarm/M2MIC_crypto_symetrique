@@ -35,10 +35,10 @@ def S_AES(x):
 print(S_AES(0x01)) # -> 0x7c = 124
 print(S_AES(0x2f)) # -> 0x15 = 21
 
-""" Rappel : Table de distribution des différences (DDT).
-        Soit S : F_{2^n} -> F_{2^n}  une boîte-S. La DDT de S est une table de dimensions 2^n*2^n,
+""" Rappel: Table de distribution des différences (DDT)
+        Soit S : F_{2^n} -> F_{2^n}  une boite-S. La DDT de S est une table de dimensions 2^n*2^n,
         où le coeff situé à l'intersection de la ligne a et de la colonne b est donné par :
-                        d_S(a,b) := #{x \in F_{2^n} | S(x)^S(x^a) = b}  
+                        d_S(a,b) := #{x \\in F_{2^n} | S(x)^S(x^a) = b}  
         où ^ est l'addition dans le corps F_{2^n}   
         
         Voici le calcul de la DDT de la boîte-S de l'AES :   """
@@ -62,16 +62,16 @@ for a in range(1<<8):
         s_0, s_1, ..., s_{m-1} où chaque coordonnée est une fonction booléenne.
         Ie s_i : F_{2^n} -> F_2. Cela s'exprime sous la forme :
                         S(x) = (s_0(x), s_1(x), ..., s_{m-1}(x))    
-        où x \in F_{2^n}.
+        où x \\in F_{2^n}.
     
     Remarque : Il est parfois préferable de représenter une boîte-S en utilisant la forme normale algébrique (ANF)
         de ses fonctions coordonnées.
     
     Rappel/déf : Soit f une fonction booléenne en n variables. La forme algébrique normale de f est :
-                        f(x) = \bigoplus_{u\in F_{2^n}} c_f(u)x^u
+                        f(x) = \\bigoplus_{u \\in F_{2^n}} c_f(u)x^u
         où x^u = x_0^{u_0} x_1^{u_1} ... x_{n-1}^{u_{n-1}}
         et le coefficient c_f(u) peut être calculé à l'aide de la transformée de Möbius comme suit :
-                        c_f(u) = \bigoplus_{v\in F_{2^n}, v<u} f(v) 
+                        c_f(u) = \\bigoplus_{v \\in F_{2^n}, v<u} f(v) 
         où v<u ssi (u_i=0 => v_i=0) pour tout i     
         
     Application : """
