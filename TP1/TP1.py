@@ -2,7 +2,7 @@
     |                              Partie 1 - Boîte-S de l'AES                             |
     |______________________________________________________________________________________| """
 
-""" Question 1:
+""" QUESTION 1:
     Rappel : Une Boite-S est une application : F_{2^n} -> F_{2^m} 
     
     AES : Dans le cas de l'AES, on a n=m=8, il s'agit donc d'une fonction qui envoit un octet
@@ -56,7 +56,7 @@ for a in range(1<<8):
     print(DDT[a]) """
 
 
-""" Question 2:
+""" QUESTION 2:
     Fonctions coordonnées : Mathématiquement, une Boite-S peut être vue comme une fonction 
         booléenne vectorielle  S : F_{2^n} -> F_{2^m}, qui se décompose en m coordonnée
         s_0, s_1, ..., s_{m-1} où chaque coordonnée est une fonction booléenne.
@@ -72,6 +72,28 @@ for a in range(1<<8):
         où x^u = x_0^{u_0} x_1^{u_1} ... x_{n-1}^{u_{n-1}}
         et le coefficient c_f(u) peut être calculé à l'aide de la transformée de Möbius comme suit :
                         c_f(u) = \\bigoplus_{v \\in F_{2^n}, v<u} f(v) 
-        où v<u ssi (u_i=0 => v_i=0) pour tout i     
-        
-    Application : """
+        où v<u ssi (u_i=0 => v_i=0) pour tout i     """
+
+# Fonction permettant d'extraire des fonctions coordonnées de la Boîte-S de l'AES
+def S_AES_i(i, x):
+    # Décalage de l'octet de i bit vers la droite et applic. masque
+    return (S_AES(x) >> i) & 1  
+
+# Tests
+s = 0
+for i in range(8):
+    s=s+S_AES_i(i, 0x01)*(2**i)
+print(s)
+s = 0
+for i in range(8):
+    s=s+S_AES_i(i, 0x2f)*(2**i)
+print(s)
+
+
+""" Application : Le module sage.crypto.sbox.SBox de SageMath est très pratique pour calculer  de
+        diverses propriétés (cryptographiques) des boîtes-S. On utilise ce module pour calculer la 
+        forme algébrique normale de chacune des 8 coordonnées de la boîte-S de l’AES.  """
+
+from sage.all import *
+from sage.crypto.sbox import SBox
+
