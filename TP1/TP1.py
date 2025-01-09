@@ -3,10 +3,11 @@
     |______________________________________________________________________________________| """
 
 """ Question 1:
-    On rappelle qu'une Boite-S est une application : F_{2^n} -> F_{2^n} 
-    Dans le cas de l'AES, on a n=8, il s'agit donc d'une fonction qui envoit un octet
-    sur un autre. Voici le tableau des images de la boîte S utilisée dans le chiffrement AES, 
-    ainsi que la fonction S_AES qui définit directement cette boîte-S :     """
+    Rappel : Une Boite-S est une application : F_{2^n} -> F_{2^m} 
+    
+    AES : Dans le cas de l'AES, on a n=m=8, il s'agit donc d'une fonction qui envoit un octet
+        sur un autre. Voici le tableau des images de la boîte S utilisée dans le chiffrement AES, 
+        ainsi que la fonction S_AES qui définit directement cette boîte-S :     """
 
 Boite_S_AES =  [[0x63, 0x7C, 0x77, 0x7B, 0xF2, 0x6B, 0x6F, 0xC5, 0x30, 0x01, 0x67, 0x2B, 0xFE, 0xD7, 0xAB, 0x76],
                 [0xCA, 0x82, 0xC9, 0x7D, 0xFA, 0x59, 0x47, 0xF0, 0xAD, 0xD4, 0xA2, 0xAF, 0x9C, 0xA4, 0x72, 0xC0],
@@ -30,23 +31,22 @@ def S_AES(x):
     colonne = x%16
     return Boite_S_AES[x//16][x%16]
 
-# Quelques test :
+# Quelques tests :
 print(S_AES(0x01)) # -> 0x7c = 124
 print(S_AES(0x2f)) # -> 0x15 = 21
 
-
 """ Rappel : Table de distribution des différences (DDT).
-    Soit S : F_{2^n} -> F_{2^n}  une boîte-S. La DDT de S est une table de dimensions 2^n*2^n,
-    où le coeff situé à l'intersection de la ligne a et de la colonne b est donné par :
-                    d_S(a,b) := #{x \in F_{2^n} | S(x)^S(x^a) = b}  
-    où ^ est l'addition dans le corps F_{2^n}   
-    
-    Voici le calcul de la DDT de la boîte-S de l'AES :   """
+        Soit S : F_{2^n} -> F_{2^n}  une boîte-S. La DDT de S est une table de dimensions 2^n*2^n,
+        où le coeff situé à l'intersection de la ligne a et de la colonne b est donné par :
+                        d_S(a,b) := #{x \in F_{2^n} | S(x)^S(x^a) = b}  
+        où ^ est l'addition dans le corps F_{2^n}   
+        
+        Voici le calcul de la DDT de la boîte-S de l'AES :   """
 
 # Initialisation de la table
 DDT = [[0 for a in range(1<<8)] for b in range(1<<8)]
 
-# Calcul des coefficients
+# Calcul des coefficients de la table
 for a in range(1<<8):
     for x in range(1<<8):
         DDT[a][S_AES(x)^S_AES(x^a)] += 1
@@ -55,5 +55,23 @@ for a in range(1<<8):
 """ for a in range(1<<8):
     print(DDT[a]) """
 
+
 """ Question 2:
-         """
+    Fonctions coordonnées : Mathématiquement, une Boite-S peut être vue comme une fonction 
+        booléenne vectorielle  S : F_{2^n} -> F_{2^m}, qui se décompose en m coordonnée
+        s_0, s_1, ..., s_{m-1} où chaque coordonnée est une fonction booléenne.
+        Ie s_i : F_{2^n} -> F_2. Cela s'exprime sous la forme :
+                        S(x) = (s_0(x), s_1(x), ..., s_{m-1}(x))    
+        où x \in F_{2^n}.
+    
+    Remarque : Il est parfois préferable de représenter une boîte-S en utilisant la forme normale algébrique (ANF)
+        de ses fonctions coordonnées.
+    
+    Rappel/déf : Soit f une fonction booléenne en n variables. La forme algébrique normale de f est :
+                        f(x) = \bigoplus_{u\in F_{2^n}} c_f(u)x^u
+        où x^u = x_0^{u_0} x_1^{u_1} ... x_{n-1}^{u_{n-1}}
+        et le coefficient c_f(u) peut être calculé à l'aide de la transformée de Möbius comme suit :
+                        c_f(u) = \bigoplus_{v\in F_{2^n}, v<u} f(v) 
+        où v<u ssi (u_i=0 => v_i=0) pour tout i     
+        
+    Application : """
