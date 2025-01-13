@@ -123,15 +123,36 @@ M = [[2, 3, 1, 1],
      [3, 1, 1, 2]]
 
 # Multiplication matrices n*n octets
-""" def multi_matrice(A, B, n): """
+def multiplication_matrice(A, B, n):
+    resultat = [[0]*n for i in range(n)]
+    for i in range(n):
+        for j in range(n):
+            for k in range(n):
+                resultat[i][j] += multiplication(A[i][k], B[k][j])
+    return resultat
+
+# Fonction principale MixColums qui consiste simplement à multiplier M par x
+def MixColums(x):
+    return multiplication_matrice(M, x, 4)
 
 
 
+
+# Tests et debug
 """ print(XOR_mots(a, b))
 print(SubBytes(XOR_mots(a, b)))
 print(ShiftRows(XOR_mots(a, b)))
 print(Boite_S_AES[0x01]) # -> 0x7c = 124
 print(Boite_S_AES[0x2f]) # -> 0x15 = 21 """
 
+A = [[2, 0, 0, 0],
+     [0, 2, 0, 0],
+     [0, 0, 2, 0],
+     [0, 0, 0, 2]]
 
-print(hex((multiplication(2, 163))))
+B = [[1, 0, 0, 0],
+     [0, 0, 0, 0],
+     [0, 0, 2, 0],
+     [0, 0, 0, 0]]
+
+print(multiplication_matrice(A, B, 4))
