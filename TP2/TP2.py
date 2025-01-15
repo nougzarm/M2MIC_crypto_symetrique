@@ -1,3 +1,6 @@
+""" @nougzarm
+    sujet TP2 du cours de crypto symétrique
+    Master2 MIC 2024-2025 """
 """  __________________________________________________________________________________________________
     |                        TP2 - Attaque intégrale contre 4 tours de l’AES                           |
     |__________________________________________________________________________________________________| """
@@ -134,6 +137,12 @@ def multiplication_matrice(A, B, n):
 # Fonction principale MixColums qui consiste simplement à multiplier M par x
 def MixColums(x):
     return multiplication_matrice(M, x, 4)
+
+""" tour_AES : On peut à présent définir la fonction tour de l'AES qui prend une clé dérivé K_i 
+    et qui retourne un chiffré    """
+
+""" def tour_AES(x, cle_derivee):
+    return(XOR_mots) """
 
 
 
