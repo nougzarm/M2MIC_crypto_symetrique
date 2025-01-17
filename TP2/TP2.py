@@ -139,7 +139,7 @@ def MixColums(x):
     return multiplication_matrice(M, x, 4)
 
 """ tour_AES : On peut à présent définir la fonction tour de l'AES qui prend une clé dérivé K_i 
-    et qui retourne un chiffré    """
+    et qui retourne un chiffré   """
 
 """ def tour_AES(x, cle_derivee):
     return(XOR_mots) """
