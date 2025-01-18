@@ -65,7 +65,7 @@ inv_mat_MC =   [[14, 11, 13, 9],
                 [13, 9, 14, 11], 
                 [11, 13, 9, 14]]
 
-# La liste Rcon utilisée dans la dérivation de clée
+# La liste Rcon utilisée dans la dérivation de clé
 rcon = [[0x01, 0x00, 0x00, 0x00], [0x02, 0x00, 0x00, 0x00],
         [0x04, 0x00, 0x00, 0x00], [0x08, 0x00, 0x00, 0x00],
         [0x10, 0x00, 0x00, 0x00], [0x20, 0x00, 0x00, 0x00],
@@ -119,7 +119,8 @@ def invShiftRows(x):
             y[i].append(x[i][(j-i)%4])
     return y
 
-""" Multiplication d'octets : les octets sont vus comme des éléments du corps F_{2^8} = F_2[X]/(P) où P = X^7 + X^5 + X + 1)
+""" Multiplication d'octets : 
+        Les octets sont vus comme des éléments du corps F_{2^8} = F_2[X]/(P) où P = X^7 + X^5 + X + 1
         Ce qui nous permet de définir la multiplication d'octets. Avant de pouvoir implémenter la fonction 
         multiplication nous avons besoin de fonctions intermédiaires qui sont les suivantes :
             - add_pol_deg_d(a, b, d)
@@ -194,9 +195,41 @@ def MixColumns(x):
 def invMixColumns(x):
     return multiplication_matrice(inv_mat_MC, x, 4)
 
-""" Définition de la fonction de dérivation de clé """
 
+""" Définition de la fonction de dérivation de clé :
+        - Nk est la taille de la clé 'cle' en mots de 32 bits (4 pour l'AES-128)
+        - Nr désigne le nombre de tour de l'AES (10 pour l'AES-128)     
+    Prérequis :
+        - Fonction de rotation d'un mot de 32 bits vers la gauche de nb_bit bits : rot_mot(mot, nb_bit)
+        - Fonction appliquant la boite-S octet par octet sur un mot : sbox_mot(mot)  """
 
+def rot_mot(mot, nb_bit):
+    mot_resultat = ((mot << nb_bit) | (mot >> (32 - nb_bit))) & 0xffffffff
+    return mot_resultat
+
+def sbox_mot(mot):
+    resultat = 0
+    for i in range(4):
+        octet_temp = (mot >> 8*(4-i-1))%(2**8)
+        resultat += Boite_S_AES[octet_temp]*(2**(8*(3-i)))
+    return resultat
+
+def derivation_cle(cle, Nk):
+    Nr = Nk + 6
+    W = [0]*(4*(Nr+1))   # On a Nr+1 clé dérivée de 128 bits
+    # On recopie la clé maître dans les Nk premiers mots de W
+    for i in range(Nk):
+        W[i] = (cle >> (32*(Nk-i-1)))%(2**32)
+    # Génération du reste :
+    for i in range(Nk, 4*(Nr+1)):
+        temporaire = W[i-1]
+        # Calcul de W[i] en fonction des cas
+        if i%Nk == 0:
+            temporaire = rot_mot(temporaire, 8) # Rotation du mot de 8 bits vers la gauche
+            temporaire = sbox_mot(temporaire)   # Application de la boite-S octet par octer
+            temporaire = temporaire ^ (rcon[i//Nk - 1][0])*(2**(8*3))
+        W[i] = W[i-Nk] ^ temporaire
+    return W
 
 """ tour_AES : On peut à présent définir la fonction tour de l'AES qui prend une clé dérivé K_i 
         et qui retourne un chiffré. 
@@ -211,9 +244,9 @@ def tour_AES(x, cle_derivee, option_MixColumns):
         resultat = MixColumns(resultat)
     return resultat
 
-def AES(x, cle_prive, nb_tour):
+""" def AES(x, cle_prive, nb_tour):
     resultat
-    return resultat
+    return resultat """
 
 # Tests et debug
 """ print(XOR_mots(a, b))
@@ -232,6 +265,7 @@ B = [[1, 0, 0, 0],
      [0, 2, 2, 20],
      [0, 4, 9, 0]]
 
-print(A)
-print(invShiftRows(A))
-print(ShiftRows(invShiftRows(A)))
+cle_exemple = 0xf2c3a8b7d9e45f6a1d2e3c4b5a6f7c8e
+W = derivation_cle(cle_exemple, 4)
+for i in range(44):
+    print(hex(W[i]))
