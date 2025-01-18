@@ -287,6 +287,7 @@ def tour_AES(x, cle_derivee, option_MixColumns):
     Remarque : Pas de fonction MixColumns pour le dernier tour  """
 
 def AES_chiffrement(x, cle_prive, nb_tour):
+    print("Chiffrement : ")
     cle = derivation_cle(cle_prive)
     print(f"Utilisation de la première clé : {hex(mat_vers_texte(cle[0]))}")
     resultat = XOR_mots(x, cle[0])
@@ -302,19 +303,26 @@ def AES_chiffrement(x, cle_prive, nb_tour):
 
 def inv_tour_AES(x, cle_derivee, option_MixColumns):
     resultat = XOR_mots(x, cle_derivee)
+    print(f"après invAddRoundKey : {hex(mat_vers_texte(resultat))}")
     if option_MixColumns != 0:
         resultat = invMixColumns(resultat)
+        print(f"après invMixColumns : {hex(mat_vers_texte(resultat))}")
     resultat = invShiftRows(resultat)
+    print(f"après invShiftRows : {hex(mat_vers_texte(resultat))}")
     resultat = invSubBytes(resultat)
+    print(f"après invSubBytes : {hex(mat_vers_texte(resultat))}")
     return resultat
 
 def AES_dechiffrement(x, cle_prive, nb_tour):
+    print(f"dechiffrement de {hex(mat_vers_texte(x))}")
     cle = derivation_cle(cle_prive)
-    resultat = x
     for i in range(nb_tour):
-        inv_tour_AES(resultat, cle[nb_tour-i], i)
-    resultat = XOR_mots(resultat, cle[0])
-    return resultat
+        print(f"dechiffrement tour {10-i}")
+        x = inv_tour_AES(x, cle[nb_tour-i], i)
+        print(f"apres tour {10-i} : {hex(mat_vers_texte(x))}")
+    x = XOR_mots(x, cle[0])
+    print(f"après dernier invAddRoundKey : {hex(mat_vers_texte(x))}")
+    return x
 
 
 """  __________________________________________________________________________________________________
@@ -354,7 +362,7 @@ B = [[1, 0, 0, 0],
      [0, 2, 2, 20],
      [0, 4, 9, 0]]
 
-cle_exemple = 0xf2c3a8b7d9e45f6a1d2e3c4b5a6f7c8e
+cle_exemple = 0xf2c3a8b7d9e45f6a1d2e3c4b5a6f7c7e
 texte_exemple = 0xf2c3a8b7d9e45f6a1d2e3c4b5a6f7c8e
 texte_mat = texte_vers_mat(0xf2c3a8b7d9e45f6a1d2e3c4b5a6f7c8e)
 
@@ -364,3 +372,5 @@ dechiffre_exemple_mat = AES_dechiffrement(chiffre_exemple_mat, cle_exemple, 10)
 dechiffre_exemple_texte = mat_vers_texte(dechiffre_exemple_mat)
 print(f"Voici le déchiffrement : {hex(dechiffre_exemple_texte)}")
 
+""" print(hex(texte_exemple))
+print(hex(mat_vers_texte(XOR_mots(texte_mat, texte_mat)))) """
