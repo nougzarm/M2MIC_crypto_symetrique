@@ -132,6 +132,7 @@ def multiplication_matrice(A, B, n):
         for j in range(n):
             for k in range(n):
                 resultat[i][j] += multiplication(A[i][k], B[k][j])
+            resultat[i][j] = resultat[i][j]%256
     return resultat
 
 # Fonction principale MixColums qui consiste simplement à multiplier M par x
@@ -139,11 +140,17 @@ def MixColums(x):
     return multiplication_matrice(M, x, 4)
 
 """ tour_AES : On peut à présent définir la fonction tour de l'AES qui prend une clé dérivé K_i 
-    et qui retourne un chiffré   """
+        et qui retourne un chiffré. 
+    
+    Remarque :  
+        Si option_MixColumns = 0 : l'opération MixColumns n'est pas effectuée
+        Si option_MixColumns != 0 : l'opération MixColumns est effectuée      """
 
-""" def tour_AES(x, cle_derivee):
-    return(XOR_mots) """
-
+def tour_AES(x, cle_derivee, option_MixColumns):
+    resultat = ShiftRows(SubBytes(XOR_mots(x, cle_derivee)))
+    if option_MixColumns != 0:
+        resultat = MixColums(resultat)
+    return resultat
 
 
 
@@ -157,11 +164,13 @@ print(Boite_S_AES[0x2f]) # -> 0x15 = 21 """
 A = [[2, 0, 0, 0],
      [0, 2, 0, 0],
      [0, 0, 2, 0],
-     [0, 0, 0, 2]]
+     [0, 0, 3, 2]]
 
 B = [[1, 0, 0, 0],
-     [0, 0, 0, 0],
-     [0, 0, 2, 0],
-     [0, 0, 0, 0]]
+     [0, 1, 0, 0],
+     [0, 2, 2, 20],
+     [0, 4, 9, 0]]
 
 print(multiplication_matrice(A, B, 4))
+print(tour_AES(A, B, 0))
+print(multiplication_matrice(tour_AES(A, B, 0), M, 4))
