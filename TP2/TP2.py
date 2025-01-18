@@ -2,7 +2,7 @@
     sujet TP2 du cours de crypto symétrique
     Master2 MIC 2024-2025 """
 """  __________________________________________________________________________________________________
-    |                        TP2 - Attaque intégrale contre 4 tours de l’AES                           |
+    |                      TP2 - Attaque intégrale contre 4 tours de l’AES-128                         |
     |__________________________________________________________________________________________________| """
 
 """ But : Le but est d'implémenter l'attaque présentée dans le sujet TP2.pdf
@@ -10,8 +10,12 @@
     
     Rappel : On rappelle que AES-128 chiffre des mots de 16 octets (= 128 bits), qui seront donc représentés par
         des matrices de taille 4*4 octets. Cette représentation est utile car elle rend plus intuitives
-        les opérations intermédiaires de l'AES
+        les opérations intermédiaires de l'AES  """
           
+"""  __________________________________________________________________________________________________
+    |                                               Constantes                                         |
+    |__________________________________________________________________________________________________| 
+
     Début : Commençons par définir les différentes constantes nécessaires pour l'implémentation de l'AES :
         - Boîte-S de l'AES utilisée dans SubBytes (ainsi que son inverse dans invSubBytes)
         - Matrice mat_MC utilisée dans MixColumns (et son inverse inv_mat_MC dans invMixColumns)
@@ -73,11 +77,13 @@ rcon = [[0x01, 0x00, 0x00, 0x00], [0x02, 0x00, 0x00, 0x00],
         [0x1B, 0x00, 0x00, 0x00], [0x36, 0x00, 0x00, 0x00]]
 
 
-""" Définition des fonctions utilisées dans le chiffrement (et déchiffrement) de l'AES-128:
+"""  __________________________________________________________________________________________________
+    |                      AddRoundKey (ARK), SubBytes (SB) et ShiftRows (SR)                          |
+    |__________________________________________________________________________________________________| """
+""" Définition des fonctions suivantes utilisée dans l'AES-128:
         - AddRoundKey (ARK) qui est simplement XOR_mots(x, cle_derivee_k)
         - SubBytes (SB) ainsi que son inverse
-        - ShiftRows (SR) ainsi que son inverse
-        - MixColumns (MC) ainsi que son inverse  """
+        - ShiftRows (SR) ainsi que son inverse    """
 
 # Fonction addition (XOR) entre deux matrices 4*4 octets - AddRoundKey (ARK)
 def XOR_mots(a, b):
@@ -119,15 +125,19 @@ def invShiftRows(x):
             y[i].append(x[i][(j-i)%4])
     return y
 
-""" Multiplication d'octets : 
-        Les octets sont vus comme des éléments du corps F_{2^8} = F_2[X]/(P) où P = X^7 + X^5 + X + 1
-        Ce qui nous permet de définir la multiplication d'octets. Avant de pouvoir implémenter la fonction 
-        multiplication nous avons besoin de fonctions intermédiaires qui sont les suivantes :
-            - add_pol_deg_d(a, b, d)
-            - mul_pol_monome(Q, d, m)
-            - deg_pol_d(Q, d)
-            - MultiplicationAvantReduction(a, b)
-            - reduction_P(Q, d)     """
+
+"""  __________________________________________________________________________________________________
+    |                             MixColumns (MC) - Multiplication d'octets                            |
+    |__________________________________________________________________________________________________|
+
+    Les octets sont vus comme des éléments du corps F_{2^8} = F_2[X]/(P) où P = X^7 + X^5 + X + 1
+    Ce qui nous permet de définir la multiplication d'octets. Avant de pouvoir implémenter la fonction 
+    multiplication nous avons besoin de fonctions intermédiaires qui sont les suivantes :
+        - add_pol_deg_d(a, b, d)
+        - mul_pol_monome(Q, d, m)
+        - deg_pol_d(Q, d)
+        - MultiplicationAvantReduction(a, b)
+        - reduction_P(Q, d)     """
 
 # Addition de deux polynomes de F_2[X] de degré au plus d (a et b doivent être de longueur d)
 def add_pol_deg_d(a, b, d):
@@ -196,9 +206,14 @@ def invMixColumns(x):
     return multiplication_matrice(inv_mat_MC, x, 4)
 
 
-""" Définition de la fonction de dérivation de clé :
+"""  __________________________________________________________________________________________________
+    |                                         Dérivation de clé                                        |
+    |__________________________________________________________________________________________________|
+
+    Définition de la fonction de dérivation de clé : derivation_cle(cle, Nk)
         - Nk est la taille de la clé 'cle' en mots de 32 bits (4 pour l'AES-128)
-        - Nr désigne le nombre de tour de l'AES (10 pour l'AES-128)     
+        - Nr désigne le nombre de tour de l'AES (10 pour l'AES-128)  
+        - Renvoie une liste de 11 matrices 4*4 octets qu'on peut directement utiliser pour AddRoundKey   
     Prérequis :
         - Fonction de rotation d'un mot de 32 bits vers la gauche de nb_bit bits : rot_mot(mot, nb_bit)
         - Fonction appliquant la boite-S octet par octet sur un mot : sbox_mot(mot)  """
@@ -229,9 +244,23 @@ def derivation_cle(cle, Nk):
             temporaire = sbox_mot(temporaire)   # Application de la boite-S octet par octer
             temporaire = temporaire ^ (rcon[i//Nk - 1][0])*(2**(8*3))
         W[i] = W[i-Nk] ^ temporaire
-    return W
+    print(W)
+    # Conversion en liste de clés qui sont des matrices de 4*4 octets 
+    W_128 = []
+    for i in range(Nr+1):
+        liste_temp = [[0]*4]*4
+        for j in range(4):
+            for k in range(4):
+                liste_temp[j][k] = (W[4*i+j] >> 8*(3-k)) & 0xff
+        W_128.append(liste_temp)
+    return W_128
 
-""" tour_AES : On peut à présent définir la fonction tour de l'AES qui prend une clé dérivé K_i 
+
+"""  __________________________________________________________________________________________________
+    |                                 Chiffrement/Déchiffrement AES-128                                |
+    |__________________________________________________________________________________________________|
+    
+    tour_AES : On peut à présent définir la fonction tour de l'AES qui prend une clé dérivé K_i 
         et qui retourne un chiffré. 
     
     Remarque :  
@@ -244,9 +273,22 @@ def tour_AES(x, cle_derivee, option_MixColumns):
         resultat = MixColumns(resultat)
     return resultat
 
-""" def AES(x, cle_prive, nb_tour):
+""" Fonction de chiffrement AES :
+        - x est un mot de 128 bits sous la forme d'une matrice 4*4 octets
+        - cle_prive doit être une chaîne de 128 bits
+        - Initialiser nb_tour = 10 pour avoir le chiffrement AES-128    
+    
+    Remarque : Pas de fonction MixColumns pour le dernier tour  """
+
+def AES_chiffrement(x, cle_prive, nb_tour):
     resultat
-    return resultat """
+    return resultat 
+
+
+
+
+
+
 
 # Tests et debug
 """ print(XOR_mots(a, b))
@@ -267,5 +309,10 @@ B = [[1, 0, 0, 0],
 
 cle_exemple = 0xf2c3a8b7d9e45f6a1d2e3c4b5a6f7c8e
 W = derivation_cle(cle_exemple, 4)
-for i in range(44):
+""" for i in range(44):
     print(hex(W[i]))
+ """
+for i in range(11):
+    print(W[i])
+
+print(hex(W[10][3][2]))
