@@ -6,24 +6,16 @@
     |__________________________________________________________________________________________________| """
 
 """ But : Le but est d'implémenter l'attaque présentée dans le sujet TP2.pdf
-        Pour pouvoir le faire, on commence par l'implémentation de l'AES même.
+        Pour pouvoir le faire, on commence par l'implémentation de l'AES-128 même.
     
-    Rappel : On rappelle que AES chiffre des mots de 16 octets (= 128 bits), qui seront donc représentés par
+    Rappel : On rappelle que AES-128 chiffre des mots de 16 octets (= 128 bits), qui seront donc représentés par
         des matrices de taille 4*4 octets. Cette représentation est utile car elle rend plus intuitives
         les opérations intermédiaires de l'AES
           
-    Début : Commençons par définir les différentes constantes nécessaires pour l'implémentation de l'AES :  """
-
-# Mots tests
-a = [[1, 3, 0, 3],
-     [1, 0, 5, 3],
-     [1, 2, 5, 3],
-     [1, 2, 5, 3]]
-
-b = [[1, 2, 1, 3],
-     [0, 2, 0, 3],
-     [1, 2, 4, 3],
-     [1, 2, 5, 5]]
+    Début : Commençons par définir les différentes constantes nécessaires pour l'implémentation de l'AES :
+        - Boîte-S de l'AES utilisée dans SubBytes (ainsi que son inverse dans invSubBytes)
+        - Matrice mat_MC utilisée dans MixColumns (et son inverse inv_mat_MC dans invMixColumns)
+        - Liste RCON utilisée dans la dérivation de clé  """
 
 # Boite-S utilisée pour l'AES
 Boite_S_AES =  [0x63, 0x7C, 0x77, 0x7B, 0xF2, 0x6B, 0x6F, 0xC5, 0x30, 0x01, 0x67, 0x2B, 0xFE, 0xD7, 0xAB, 0x76,
@@ -61,6 +53,32 @@ Boite_S_inv_AES =  [0x52, 0x09, 0x6A, 0xD5, 0x30, 0x36, 0xA5, 0x38, 0xBF, 0x40, 
                     0xA0, 0xE0, 0x3B, 0x4D, 0xAE, 0x2A, 0xF5, 0xB0, 0xC8, 0xEB, 0xBB, 0x3C, 0x83, 0x53, 0x99, 0x61,
                     0x17, 0x2B, 0x04, 0x7E, 0xBA, 0x77, 0xD6, 0x26, 0xE1, 0x69, 0x14, 0x63, 0x55, 0x21, 0x0C, 0x7D]
 
+# Matrice mat_MC utilisée dans la multiplication de MixColumns
+mat_MC =   [[2, 3, 1, 1],
+            [1, 2, 3, 1],
+            [1, 1, 2, 3],
+            [3, 1, 1, 2]]
+
+# Ainsi que son inverse :
+inv_mat_MC =   [[14, 11, 13, 9],
+                [9, 14, 11, 13], 
+                [13, 9, 14, 11], 
+                [11, 13, 9, 14]]
+
+# La liste Rcon utilisée dans la dérivation de clée
+rcon = [[0x01, 0x00, 0x00, 0x00], [0x02, 0x00, 0x00, 0x00],
+        [0x04, 0x00, 0x00, 0x00], [0x08, 0x00, 0x00, 0x00],
+        [0x10, 0x00, 0x00, 0x00], [0x20, 0x00, 0x00, 0x00],
+        [0x40, 0x00, 0x00, 0x00], [0x80, 0x00, 0x00, 0x00],
+        [0x1B, 0x00, 0x00, 0x00], [0x36, 0x00, 0x00, 0x00]]
+
+
+""" Définition des fonctions utilisées dans le chiffrement (et déchiffrement) de l'AES-128:
+        - AddRoundKey (ARK) qui est simplement XOR_mots(x, cle_derivee_k)
+        - SubBytes (SB) ainsi que son inverse
+        - ShiftRows (SR) ainsi que son inverse
+        - MixColumns (MC) ainsi que son inverse  """
+
 # Fonction addition (XOR) entre deux matrices 4*4 octets - AddRoundKey (ARK)
 def XOR_mots(a, b):
     c = [[] for i in range(4)]
@@ -77,7 +95,7 @@ def SubBytes(x):
             y[i][j] = Boite_S_AES[x[i][j]]
     return y
 
-# Inverse de la fonction SubBytes (SB_inv)
+# Inverse de la fonction SubBytes (invSB)
 def invSubBytes(x):
     y = [[0]*4 for i in range(4)]
     for i in range(4):
@@ -93,9 +111,23 @@ def ShiftRows(x):
             y[i].append(x[i][(j+i)%4])
     return y
 
+# Inverse de la fonction ShiftRows (invSR)
+def invShiftRows(x):
+    y = [[] for i in range(4)]
+    for i in range(4):
+        for j in range(4):
+            y[i].append(x[i][(j-i)%4])
+    return y
+
 """ Multiplication d'octets : les octets sont vus comme des éléments du corps F_{2^8} = F_2[X]/(P) où P = X^7 + X^5 + X + 1)
         Ce qui nous permet de définir la multiplication d'octets. Avant de pouvoir implémenter la fonction 
-        multiplication nous avons besoin de fonctions intermédiaires    """
+        multiplication nous avons besoin de fonctions intermédiaires qui sont les suivantes :
+            - add_pol_deg_d(a, b, d)
+            - mul_pol_monome(Q, d, m)
+            - deg_pol_d(Q, d)
+            - MultiplicationAvantReduction(a, b)
+            - reduction_P(Q, d)     """
+
 # Addition de deux polynomes de F_2[X] de degré au plus d (a et b doivent être de longueur d)
 def add_pol_deg_d(a, b, d):
     resultat = [0]*(d+1)
@@ -110,14 +142,14 @@ def mul_pol_monome(Q, d, m):
         Q_res[d-i] = Q[d-i-m] 
     return Q_res
 
-# Renvoie le degré d'un polynome inscrit sur une liste de longueur d+1 
+# Renvoie le degré d'un polynome inscrit sur une liste de longueur d+1 (nécessaire pour la réduction par un polynome)
 def deg_pol_d(Q, d):
     for i in range(d):
         if(Q[d-i] != 0):
             return d-i
     return -1
 
-# Multiplication d'octets (fonction finale)
+# Multiplication d'octets sans réduction (nécessaire pour la multiplication d'octets)
 def MultiplicationAvantReduction(a, b):
     polynome_produit = [0]*15   # Le polynome produit avant réduction
     for i in range(8):
@@ -127,7 +159,7 @@ def MultiplicationAvantReduction(a, b):
         polynome_produit[i] = polynome_produit[i]%2
     return polynome_produit
 
-# Réduction d'un polynome de degre (au plus) d par P = X^8 + X^4 + X^3 + X + 1
+# Réduction d'un polynome de degre =< d par P = X^8 + X^4 + X^3 + X + 1 (nécessaire pour la multiplication d'octets)
 def reduction_P(Q, d):
     P = [1, 1, 0, 1, 1, 0, 0, 0, 1]+[0, 0, 0, 0, 0, 0]  # Le polynome P = X^8 + X^4 + X^3 + X + 1
     deg_actuel = deg_pol_d(Q, d)
@@ -137,7 +169,7 @@ def reduction_P(Q, d):
         deg_actuel = deg_pol_d(Q, d)
     return Q
 
-# Fonction finale - multiplication entre deux octets
+# Multiplication entre deux octets (nécessaire pour la multiplication de matrices)
 def multiplication(a, b):
     pdt_pol = reduction_P(MultiplicationAvantReduction(a, b), 14)
     pdt = 0
@@ -145,28 +177,26 @@ def multiplication(a, b):
         pdt += pdt_pol[i]*(2**i)
     return pdt
 
-""" MixColums : maintenant qu'on peut multiplier deux octets, on peut implémenter l'étape MixColums de l'AES
-        Pour cela on commence par définir la matrice constante M utilisée dans cette opération ainsi que la
-        multiplication de deux matrice 4*4 d'octets    """
-# Matrice constante M dans l'opération MixColumns
-M = [[2, 3, 1, 1],
-     [1, 2, 3, 1],
-     [1, 1, 2, 3],
-     [3, 1, 1, 2]]
-
-# Multiplication matrices n*n octets
+# Multiplication matrices n*n octets (nécessaire pour MixColumns)
 def multiplication_matrice(A, B, n):
     resultat = [[0]*n for i in range(n)]
     for i in range(n):
         for j in range(n):
             for k in range(n):
-                resultat[i][j] += multiplication(A[i][k], B[k][j])
-            resultat[i][j] = resultat[i][j]%256
+                resultat[i][j] ^= multiplication(A[i][k], B[k][j])
     return resultat
 
-# Fonction principale MixColums qui consiste simplement à multiplier M par x
-def MixColums(x):
-    return multiplication_matrice(M, x, 4)
+# Fonction MixColumns qui consiste simplement à multiplier mat_MC par x
+def MixColumns(x):
+    return multiplication_matrice(mat_MC, x, 4)
+
+# Inverse de la fonction MixColumns (invMC)
+def invMixColumns(x):
+    return multiplication_matrice(inv_mat_MC, x, 4)
+
+""" Définition de la fonction de dérivation de clé """
+
+
 
 """ tour_AES : On peut à présent définir la fonction tour de l'AES qui prend une clé dérivé K_i 
         et qui retourne un chiffré. 
@@ -178,7 +208,7 @@ def MixColums(x):
 def tour_AES(x, cle_derivee, option_MixColumns):
     resultat = ShiftRows(SubBytes(XOR_mots(x, cle_derivee)))
     if option_MixColumns != 0:
-        resultat = MixColums(resultat)
+        resultat = MixColumns(resultat)
     return resultat
 
 def AES(x, cle_prive, nb_tour):
@@ -202,10 +232,6 @@ B = [[1, 0, 0, 0],
      [0, 2, 2, 20],
      [0, 4, 9, 0]]
 
-""" print(multiplication_matrice(A, B, 4))
-print(tour_AES(A, B, 0))
-print(multiplication_matrice(tour_AES(A, B, 0), M, 4)) """
-
 print(A)
-print(SubBytes(A))
-print(invSubBytes(SubBytes(A)))
+print(invShiftRows(A))
+print(ShiftRows(invShiftRows(A)))
