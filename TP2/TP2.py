@@ -83,7 +83,7 @@ rcon = [[0x01, 0x00, 0x00, 0x00], [0x02, 0x00, 0x00, 0x00],
 """ Définition des fonctions suivantes utilisée dans l'AES-128:
         - AddRoundKey (ARK) qui est simplement XOR_mots(x, cle_derivee_k)
         - SubBytes (SB) ainsi que son inverse
-        - ShiftRows (SR) ainsi que son inverse    """
+        - ShiftRows (SR) ainsi que son inverse (permutation 0x00010203050607040a0b08090f0c0d0e)    """
 
 # Fonction addition (XOR) entre deux matrices 4*4 octets - AddRoundKey (ARK)
 def XOR_mots(a, b):
@@ -210,7 +210,7 @@ def invMixColumns(x):
     |                                         Dérivation de clé                                        |
     |__________________________________________________________________________________________________|
 
-    Définition de la fonction de dérivation de clé : derivation_cle(cle, Nk)
+    Définition de la fonction de dérivation de clé : derivation_cle(cle)
         - Nk est la taille de la clé 'cle' en mots de 32 bits (4 pour l'AES-128)
         - Nr désigne le nombre de tour de l'AES (10 pour l'AES-128)  
         - Renvoie une liste de 11 matrices 4*4 octets qu'on peut directement utiliser pour AddRoundKey   
@@ -229,7 +229,8 @@ def sbox_mot(mot):
         resultat += Boite_S_AES[octet_temp]*(2**(8*(3-i)))
     return resultat
 
-def derivation_cle(cle, Nk):
+def derivation_cle(cle):
+    Nk = 4
     Nr = Nk + 6
     W = [0]*(4*(Nr+1))   # On a Nr+1 clé dérivée de 128 bits
     # On recopie la clé maître dans les Nk premiers mots de W
@@ -244,15 +245,13 @@ def derivation_cle(cle, Nk):
             temporaire = sbox_mot(temporaire)   # Application de la boite-S octet par octer
             temporaire = temporaire ^ (rcon[i//Nk - 1][0])*(2**(8*3))
         W[i] = W[i-Nk] ^ temporaire
-    print(W)
     # Conversion en liste de clés qui sont des matrices de 4*4 octets 
     W_128 = []
     for i in range(Nr+1):
-        liste_temp = [[0]*4]*4
+        texte_temp = 0
         for j in range(4):
-            for k in range(4):
-                liste_temp[j][k] = (W[4*i+j] >> 8*(3-k)) & 0xff
-        W_128.append(liste_temp)
+            texte_temp = texte_temp + (W[4*i + j] << 32*(3-j))
+        W_128.append(texte_vers_mat(texte_temp))
     return W_128
 
 
@@ -268,34 +267,82 @@ def derivation_cle(cle, Nk):
         Si option_MixColumns != 0 : l'opération MixColumns est appliquée      """
 
 def tour_AES(x, cle_derivee, option_MixColumns):
-    resultat = ShiftRows(SubBytes(XOR_mots(x, cle_derivee)))
+    resultat = SubBytes(x)
+    print(f"Après SubBytes : {hex(mat_vers_texte(resultat))}")
+    resultat = ShiftRows(resultat)
+    print(f"Après ShiftRows : {hex(mat_vers_texte(resultat))}")
     if option_MixColumns != 0:
         resultat = MixColumns(resultat)
+        print(f"Après MixColumns : {hex(mat_vers_texte(resultat))}")
+    resultat = XOR_mots(resultat, cle_derivee)
+    print(f"Après AddRoundKey : {hex(mat_vers_texte(resultat))}")
     return resultat
 
 """ Fonction de chiffrement AES :
         - x est un mot de 128 bits sous la forme d'une matrice 4*4 octets
         - cle_prive doit être une chaîne de 128 bits
+        - nb_tour vaut au plus 10
         - Initialiser nb_tour = 10 pour avoir le chiffrement AES-128    
     
     Remarque : Pas de fonction MixColumns pour le dernier tour  """
 
 def AES_chiffrement(x, cle_prive, nb_tour):
-    resultat
-    return resultat 
+    cle = derivation_cle(cle_prive)
+    print(f"Utilisation de la première clé : {hex(mat_vers_texte(cle[0]))}")
+    resultat = XOR_mots(x, cle[0])
+    print(f"Après premier AddRoundKey : {hex(mat_vers_texte(resultat))}")
+    for i in range(nb_tour):
+        print(f"Tour numéro {i+1} : ")
+        resultat = tour_AES(resultat, cle[i+1], nb_tour-1-i)
+        print(f"Après tour {i+1} : {hex(mat_vers_texte(resultat))}")
+    return resultat
+
+""" Déchiffrement :
+        On définit de même la fonction de tour inverse ainsi que le déchiffrement AES :     """
+
+def inv_tour_AES(x, cle_derivee, option_MixColumns):
+    resultat = XOR_mots(x, cle_derivee)
+    if option_MixColumns != 0:
+        resultat = invMixColumns(resultat)
+    resultat = invShiftRows(resultat)
+    resultat = invSubBytes(resultat)
+    return resultat
+
+def AES_dechiffrement(x, cle_prive, nb_tour):
+    cle = derivation_cle(cle_prive)
+    resultat = x
+    for i in range(nb_tour):
+        inv_tour_AES(resultat, cle[nb_tour-i], i)
+    resultat = XOR_mots(resultat, cle[0])
+    return resultat
 
 
+"""  __________________________________________________________________________________________________
+    |                                       Fonctions de conversion                                    |
+    |__________________________________________________________________________________________________| 
 
+    Définition des fonctions suivantes :
+        - texte_vers_mat() : conversion d'une chaîne de 128 bits bruts en une matrice 4*4 octets
+        - mat_vers_texte() : conversion d'une matrice 4*4 octets en une chaîne de 128 bits bruts    """
 
+def texte_vers_mat(texte):
+    mat = []
+    for i in range(4):
+        temp = [0]*4
+        for j in range(4):
+            temp[j] = (texte >> (32*(3-i) + 8*(3-j))) & 0xff
+        mat.append(temp)
+    return mat
 
+def mat_vers_texte(mat):
+    texte = 0
+    for i in range(4):
+        for j in range(4):
+            texte = (texte << 8) | mat[i][j]
+    return texte
 
 
 # Tests et debug
-""" print(XOR_mots(a, b))
-print(SubBytes(XOR_mots(a, b)))
-print(ShiftRows(XOR_mots(a, b)))
-print(Boite_S_AES[0x01]) # -> 0x7c = 124
-print(Boite_S_AES[0x2f]) # -> 0x15 = 21 """
 
 A = [[2, 137, 62, 48],
      [128, 212, 98, 17],
@@ -308,11 +355,12 @@ B = [[1, 0, 0, 0],
      [0, 4, 9, 0]]
 
 cle_exemple = 0xf2c3a8b7d9e45f6a1d2e3c4b5a6f7c8e
-W = derivation_cle(cle_exemple, 4)
-""" for i in range(44):
-    print(hex(W[i]))
- """
-for i in range(11):
-    print(W[i])
+texte_exemple = 0xf2c3a8b7d9e45f6a1d2e3c4b5a6f7c8e
+texte_mat = texte_vers_mat(0xf2c3a8b7d9e45f6a1d2e3c4b5a6f7c8e)
 
-print(hex(W[10][3][2]))
+chiffre_exemple_mat = AES_chiffrement(texte_mat, cle_exemple, 10)
+dechiffre_exemple_mat = AES_dechiffrement(chiffre_exemple_mat, cle_exemple, 10)
+
+dechiffre_exemple_texte = mat_vers_texte(dechiffre_exemple_mat)
+print(f"Voici le déchiffrement : {hex(dechiffre_exemple_texte)}")
+
