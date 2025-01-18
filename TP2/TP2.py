@@ -202,8 +202,8 @@ def invMixColumns(x):
         et qui retourne un chiffré. 
     
     Remarque :  
-        Si option_MixColumns = 0 : l'opération MixColumns n'est pas effectuée
-        Si option_MixColumns != 0 : l'opération MixColumns est effectuée      """
+        Si option_MixColumns = 0 : l'opération MixColumns n'est pas appliquée
+        Si option_MixColumns != 0 : l'opération MixColumns est appliquée      """
 
 def tour_AES(x, cle_derivee, option_MixColumns):
     resultat = ShiftRows(SubBytes(XOR_mots(x, cle_derivee)))
