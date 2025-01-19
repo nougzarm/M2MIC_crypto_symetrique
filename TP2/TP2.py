@@ -268,14 +268,10 @@ def derivation_cle(cle):
 
 def tour_AES(x, cle_derivee, option_MixColumns):
     resultat = SubBytes(x)
-    print(f"Après SubBytes : {hex(mat_vers_texte(resultat))}")
     resultat = ShiftRows(resultat)
-    print(f"Après ShiftRows : {hex(mat_vers_texte(resultat))}")
     if option_MixColumns != 0:
         resultat = MixColumns(resultat)
-        print(f"Après MixColumns : {hex(mat_vers_texte(resultat))}")
     resultat = XOR_mots(resultat, cle_derivee)
-    print(f"Après AddRoundKey : {hex(mat_vers_texte(resultat))}")
     return resultat
 
 """ Fonction de chiffrement AES :
@@ -287,15 +283,10 @@ def tour_AES(x, cle_derivee, option_MixColumns):
     Remarque : Pas de fonction MixColumns pour le dernier tour  """
 
 def AES_chiffrement(x, cle_prive, nb_tour):
-    print("Chiffrement : ")
     cle = derivation_cle(cle_prive)
-    print(f"Utilisation de la première clé : {hex(mat_vers_texte(cle[0]))}")
     resultat = XOR_mots(x, cle[0])
-    print(f"Après premier AddRoundKey : {hex(mat_vers_texte(resultat))}")
     for i in range(nb_tour):
-        print(f"Tour numéro {i+1} : ")
         resultat = tour_AES(resultat, cle[i+1], nb_tour-1-i)
-        print(f"Après tour {i+1} : {hex(mat_vers_texte(resultat))}")
     return resultat
 
 """ Déchiffrement :
@@ -303,25 +294,17 @@ def AES_chiffrement(x, cle_prive, nb_tour):
 
 def inv_tour_AES(x, cle_derivee, option_MixColumns):
     resultat = XOR_mots(x, cle_derivee)
-    print(f"après invAddRoundKey : {hex(mat_vers_texte(resultat))}")
     if option_MixColumns != 0:
         resultat = invMixColumns(resultat)
-        print(f"après invMixColumns : {hex(mat_vers_texte(resultat))}")
     resultat = invShiftRows(resultat)
-    print(f"après invShiftRows : {hex(mat_vers_texte(resultat))}")
     resultat = invSubBytes(resultat)
-    print(f"après invSubBytes : {hex(mat_vers_texte(resultat))}")
     return resultat
 
 def AES_dechiffrement(x, cle_prive, nb_tour):
-    print(f"dechiffrement de {hex(mat_vers_texte(x))}")
     cle = derivation_cle(cle_prive)
     for i in range(nb_tour):
-        print(f"dechiffrement tour {10-i}")
         x = inv_tour_AES(x, cle[nb_tour-i], i)
-        print(f"apres tour {10-i} : {hex(mat_vers_texte(x))}")
     x = XOR_mots(x, cle[0])
-    print(f"après dernier invAddRoundKey : {hex(mat_vers_texte(x))}")
     return x
 
 
@@ -350,6 +333,69 @@ def mat_vers_texte(mat):
     return texte
 
 
+"""  __________________________________________________________________________________________________
+    |                            Attaque intégrale sur 4 tours de l'AES-128                            |
+    |__________________________________________________________________________________________________| 
+    
+    Maintenant que nous avons implémenté L'AES-128, nous pouvons définir les fonctions utilisées dans 
+    l'attaque intégrale contre l'AES-128    
+    
+    Commençons par la fonction qui nous fournira la liste de nos messages clairs choisis à chiffrer :    """
+
+def msgClairs__():
+    liste = []
+    for i in range(256):
+        msg =  [[i, 0, 0, 0],
+                [0, 0, 0, 0],
+                [0, 0, 0, 0],
+                [0, 0, 0, 0]]
+        liste.append(msg)
+    return liste
+
+""" Voici la fonction d'attaque intégrale sur la forme réduite à 4 tours de l'AES-128.
+    Remarque : Ici on fournit cle_prive à la fonction mais cette clé sert uniquement à chiffrer
+    les messages clairs choisis et rien d'autre. On pourrait faire une version plus forte (structurellement)
+    où on autorise à l'adversaire uniquement l'accès à un oracle de chiffrement     """
+
+def attaque_integrale(cle_prive):
+    msgClairs = msgClairs__()  # La liste des clairs choisis
+    msgChiffres = []    # La liste des chiffrés correspondants
+    # Interaction avec l'oracle de chiffrement (256 fois)
+    for i in range(256):
+        msgChiffres.append(AES_chiffrement(msgClairs[i], cle_prive, 4)) 
+    L = []  # Liste de 16 listes contenant les bouts de clé candidats
+    for octet in range(16):
+        listeCandidats = []
+        for K in range(256):
+            sum = 0
+            for i in range(256):
+                sum ^= Boite_S_inv_AES[msgChiffres[i][octet//4][octet%4]^K]
+            if sum == 0:
+                listeCandidats.append(K)
+        if listeCandidats != []:
+            L.append(listeCandidats)
+        else :
+            print("L'attaque a échouée")
+            return 0
+    print(L) # Les combinaisons possibles 
+    cle_trouvee = 0
+    return cle_trouvee
+
+# Fonction permettant de tester notre attaque
+def test_attaque(cle_prive):
+    print(f"Voici votre clé privée maître choisie pour le test de l'attaque intégrale : {hex(cle_prive)}")
+
+    cles_derivees = derivation_cle(cle_prive)
+    print(f"Voici votre 4ème clé dérivée, qu'on doit casser : {hex(mat_vers_texte(cles_derivees[4]))}")
+
+    result = attaque_integrale(cle_prive)
+    print(hex(result))
+
+
+
+
+    
+
 # Tests et debug
 
 A = [[2, 137, 62, 48],
@@ -362,9 +408,9 @@ B = [[1, 0, 0, 0],
      [0, 2, 2, 20],
      [0, 4, 9, 0]]
 
-cle_exemple = 0xf2c3a8b7d9e45f6a1d2e3c4b5a6f7c7e
+cle_exemple = 0xf2c3a8b7d9e45f6a1d2e3c4b5a6f7c1e
 texte_exemple = 0xf2c3a8b7d9e45f6a1d2e3c4b5a6f7c8e
-texte_mat = texte_vers_mat(0xf2c3a8b7d9e45f6a1d2e3c4b5a6f7c8e)
+texte_mat = texte_vers_mat(texte_exemple)
 
 chiffre_exemple_mat = AES_chiffrement(texte_mat, cle_exemple, 10)
 dechiffre_exemple_mat = AES_dechiffrement(chiffre_exemple_mat, cle_exemple, 10)
@@ -372,5 +418,4 @@ dechiffre_exemple_mat = AES_dechiffrement(chiffre_exemple_mat, cle_exemple, 10)
 dechiffre_exemple_texte = mat_vers_texte(dechiffre_exemple_mat)
 print(f"Voici le déchiffrement : {hex(dechiffre_exemple_texte)}")
 
-""" print(hex(texte_exemple))
-print(hex(mat_vers_texte(XOR_mots(texte_mat, texte_mat)))) """
+test_attaque(cle_exemple)
