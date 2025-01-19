@@ -363,7 +363,7 @@ def attaque_integrale(cle_prive):
     # Interaction avec l'oracle de chiffrement (256 fois)
     for i in range(256):
         msgChiffres.append(AES_chiffrement(msgClairs[i], cle_prive, 4)) 
-    L = []  # Liste de 16 listes contenant les bouts de clé candidats
+    L = []  # Les combinaisons possibles (L[i] est la liste des i-ème bouts de la clé)
     for octet in range(16):
         listeCandidats = []
         for K in range(256):
@@ -377,9 +377,7 @@ def attaque_integrale(cle_prive):
         else :
             print("L'attaque a échouée")
             return 0
-    print(L) # Les combinaisons possibles 
-    cle_trouvee = 0
-    return cle_trouvee
+    return L
 
 # Fonction permettant de tester notre attaque
 def test_attaque(cle_prive):
@@ -389,33 +387,22 @@ def test_attaque(cle_prive):
     print(f"Voici votre 4ème clé dérivée, qu'on doit casser : {hex(mat_vers_texte(cles_derivees[4]))}")
 
     result = attaque_integrale(cle_prive)
-    print(hex(result))
+    print("Voici les combinaisons possibles L : (L[i] est la liste des i-ème bouts de la clé)")
+    print(result)
 
 
-
-
-    
-
-# Tests et debug
-
-A = [[2, 137, 62, 48],
-     [128, 212, 98, 17],
-     [91, 45, 2, 87],
-     [0, 0, 92, 19]]
-
-B = [[1, 0, 0, 0],
-     [0, 1, 0, 0],
-     [0, 2, 2, 20],
-     [0, 4, 9, 0]]
+"""  __________________________________________________________________________________________________
+    |                                          Tests et debug                                          |
+    |__________________________________________________________________________________________________| """
 
 cle_exemple = 0xf2c3a8b7d9e45f6a1d2e3c4b5a6f7c1e
 texte_exemple = 0xf2c3a8b7d9e45f6a1d2e3c4b5a6f7c8e
 texte_mat = texte_vers_mat(texte_exemple)
 
-chiffre_exemple_mat = AES_chiffrement(texte_mat, cle_exemple, 10)
+""" chiffre_exemple_mat = AES_chiffrement(texte_mat, cle_exemple, 10)
 dechiffre_exemple_mat = AES_dechiffrement(chiffre_exemple_mat, cle_exemple, 10)
 
 dechiffre_exemple_texte = mat_vers_texte(dechiffre_exemple_mat)
-print(f"Voici le déchiffrement : {hex(dechiffre_exemple_texte)}")
+print(f"Voici le déchiffrement : {hex(dechiffre_exemple_texte)}") """
 
 test_attaque(cle_exemple)
