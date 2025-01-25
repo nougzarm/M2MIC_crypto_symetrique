@@ -340,25 +340,31 @@ def mat_vers_texte(mat):
     Maintenant que nous avons implémenté L'AES-128, nous pouvons définir les fonctions utilisées dans 
     l'attaque intégrale contre l'AES-128    
     
-    Commençons par la fonction qui nous fournira la liste de nos messages clairs choisis à chiffrer :    """
+    Commençons par la fonction qui nous fournira la liste de nos messages clairs choisis à chiffrer. 
+    On prend au moins 16 ensembles de messages clairs choisis afin de d'être sur de pouvoir déterminer la 
+    4e clé exacte (en faisant l'intersection des ensembles de clés possibles)"""
 
-def msgClairs__():
+def msgClairs__(k):
     liste = []
     for i in range(256):
-        msg =  [[i, 0, 0, 0],
+        msg =  [[0, 0, 0, 0],
                 [0, 0, 0, 0],
                 [0, 0, 0, 0],
                 [0, 0, 0, 0]]
+        msg[k//4][k%4] = i
         liste.append(msg)
     return liste
 
-""" Voici la fonction d'attaque intégrale sur la forme réduite à 4 tours de l'AES-128.
+""" Voici la fonction d'attaque intégrale sur la forme réduite à 4 tours de l'AES-128 pour un des 16 ensembles
+    fourni par la fonction précedente. En sortie de cette fonction, nous vérifierons si l'ensemble des clés
+    possibles obtenu est unn singleton, sinon on refait avec un autre ensemble et on réexamine l'intersection
+
     Remarque : Ici on fournit cle_prive à la fonction mais cette clé sert uniquement à chiffrer
     les messages clairs choisis et rien d'autre. On pourrait faire une version plus forte (structurellement)
     où on autorise à l'adversaire uniquement l'accès à un oracle de chiffrement     """
 
-def attaque_integrale(cle_prive):
-    msgClairs = msgClairs__()  # La liste des clairs choisis
+def sous_attaque_integrale(cle_prive, k):
+    msgClairs = msgClairs__(k)  # La liste des clairs choisis
     msgChiffres = []    # La liste des chiffrés correspondants
     # Interaction avec l'oracle de chiffrement (256 fois)
     for i in range(256):
@@ -379,6 +385,41 @@ def attaque_integrale(cle_prive):
             return 0
     return L
 
+""" Voici à présente la fonction qui permettra de vérifier si l'ensemble obtenu est un singleton :  """
+
+def test_singleton(L):
+    for i in range(16):
+        if len(L[i]) != 1:
+            return False
+    return True
+
+""" Puis, voici la fonction qui permettra de construire une intersection des ensembles de clés possibles  """
+
+def intersection(L1, L2):
+    L = []
+    for i in range(16):
+        L.append(list(set(L1[i]) & set(L2[i])))
+    return L
+
+""" Voici enfin la fonction finale de l'attaque :    """
+
+def attaque_integrale(cle_prive):
+    L = sous_attaque_integrale(cle_prive, 0)
+    i = 1
+    while (test_singleton(L) == False & i < 16):
+        L = intersection(L, sous_attaque_integrale(cle_prive, i))
+        i += 1
+    if test_singleton(L):
+        # L'attaque est réussie - Conversion en héxadécimal
+        cle_retrouuve = 0
+        for i in range(16):
+            cle_retrouuve += L[i][0] << 8*(15-i)
+        return cle_retrouuve
+    else:
+        # L'attaque a échouée
+        return 0
+        
+
 # Fonction permettant de tester notre attaque
 def test_attaque(cle_prive):
     print(f"Voici votre clé privée maître choisie pour le test de l'attaque intégrale : {hex(cle_prive)}")
@@ -387,22 +428,21 @@ def test_attaque(cle_prive):
     print(f"Voici votre 4ème clé dérivée, qu'on doit casser : {hex(mat_vers_texte(cles_derivees[4]))}")
 
     result = attaque_integrale(cle_prive)
-    print("Voici les combinaisons possibles L : (L[i] est la liste des i-ème bouts de la clé)")
-    print(result)
+
+    if result == 0:
+        print("L'attaque a échouée")
+    else:
+        print("L'attaque s'est bien terminée, voici la clé retrouvée :")
+        print(hex(result))
 
 
 """  __________________________________________________________________________________________________
-    |                                          Tests et debug                                          |
+    |                                      Execution du test                                           |
     |__________________________________________________________________________________________________| """
 
+""" texte_exemple = 0xf2c3a8b7d9e45f6a1d2e3c4b5a6f7c8e
+texte_mat = texte_vers_mat(texte_exemple)   """
+
+# Test de l'attaque intégrale
 cle_exemple = 0xf2c3a8b7d9e45f6a1d2e3c4b5a6f7c1e
-texte_exemple = 0xf2c3a8b7d9e45f6a1d2e3c4b5a6f7c8e
-texte_mat = texte_vers_mat(texte_exemple)
-
-""" chiffre_exemple_mat = AES_chiffrement(texte_mat, cle_exemple, 10)
-dechiffre_exemple_mat = AES_dechiffrement(chiffre_exemple_mat, cle_exemple, 10)
-
-dechiffre_exemple_texte = mat_vers_texte(dechiffre_exemple_mat)
-print(f"Voici le déchiffrement : {hex(dechiffre_exemple_texte)}") """
-
 test_attaque(cle_exemple)
