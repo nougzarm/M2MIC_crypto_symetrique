@@ -6,7 +6,7 @@
     |__________________________________________________________________________________________________| """
 
 """ But : Le but est d'implémenter l'attaque présentée dans le sujet TP2.pdf
-        Pour pouvoir le faire, on commence par l'implémentation de l'AES-128 même.
+        Pour pouvoir le faire, on commence par l'implémentation de l'AES-128.
     
     Rappel : On rappelle que AES-128 chiffre des mots de 16 octets (= 128 bits), qui seront donc représentés par
         des matrices de taille 4*4 octets. Cette représentation est utile car elle rend plus intuitives
