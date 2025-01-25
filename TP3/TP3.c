@@ -128,6 +128,49 @@ unsigned long* vecteurValeurs(unsigned short* tableau, unsigned int n){
     return vecteur;
 }
 
+unsigned int binomial(unsigned int n, unsigned int k){
+    if (k > n) return 0;
+    if (k == 0 || k == n) return 1;
+
+    // Calcul via la formule factorielle
+    unsigned int resultat = 1;
+    for (unsigned int i = 1; i <= k; ++i) {
+        resultat *= n--;
+        resultat /= i;
+    }
+    return resultat;
+}
+
+int degreMonome(unsigned int m, unsigned int n){
+    unsigned int deg = 0;
+    int t;
+    for(unsigned int i = 0; i < n; i++){
+        t = (m >> i) & 1;
+        if(t == 1){
+            deg++;
+        }
+    }
+    return deg;
+}
+
+unsigned long* tableauMonomes(unsigned int n, unsigned int d){
+    unsigned int tailleTableau = 0;
+    for (unsigned int i = 0; i <= d; i++){
+        tailleTableau = tailleTableau + binomial(n, i);
+    }
+
+    unsigned long* tableau = (unsigned long*)malloc(tailleTableau * sizeof(unsigned int));
+    unsigned int indice = 0;
+    unsigned int nbTotal = puissance(2, n);
+    for (unsigned int i = 0; i <= nbTotal; i++){
+        if(degreMonome(i, n) <= d){
+            tableau[indice] = i;
+            indice++;
+        }
+    }
+    return tableau;
+}
+
 /*  Fonctions principale qui prend comme arguments :
         - Nom d'un fichier
         - Le degré souhaité */
@@ -182,10 +225,26 @@ int main(int argc, char *argv[]) {
     }
     printf("]\n");
 
-    
+    unsigned int d = atoi(argv[2]);
+    unsigned int tailleTableau = 0;
+    for (unsigned int i = 0; i <= d; i++){
+        tailleTableau = tailleTableau + binomial(n, i);
+    }
+    unsigned long* tableauMonomesC = tableauMonomes(n, d);
+
+    /* printf("\nOn a d = %d et nb de monome de degre au plus d : %d\n Les voici : \n", d, tailleTableau);
+    for (int i = 0; i < tailleTableau; i++){
+        printf("%ld, ", tableauMonomesC[i]);
+    }
+ */
+
+
+
+
 
     fclose(fichier);
     free(tableau);
     free(vectValeurs);
+    free(tableauMonomesC);
     return 0;
 }
