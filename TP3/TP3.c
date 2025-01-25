@@ -171,6 +171,12 @@ unsigned long* tableauMonomes(unsigned int n, unsigned int d){
     return tableau;
 }
 
+unsigned long** constructMatrice(unsigned long* vecteurValeurs, int n, unsigned int nbMonomes, unsigned int* tableauMonomesC){
+    unsigned long** matrice = (unsigned long**)calloc(nbMonomes + 1, sizeof(unsigned long*));
+    
+    return matrice;
+}
+
 /*  Fonctions principale qui prend comme arguments :
         - Nom d'un fichier
         - Le degré souhaité */
@@ -226,14 +232,14 @@ int main(int argc, char *argv[]) {
     printf("]\n");
 
     unsigned int d = atoi(argv[2]);
-    unsigned int tailleTableau = 0;
+    unsigned int nbMonomes = 0;
     for (unsigned int i = 0; i <= d; i++){
-        tailleTableau = tailleTableau + binomial(n, i);
+        nbMonomes = nbMonomes + binomial(n, i);
     }
     unsigned long* tableauMonomesC = tableauMonomes(n, d);
 
-    /* printf("\nOn a d = %d et nb de monome de degre au plus d : %d\n Les voici : \n", d, tailleTableau);
-    for (int i = 0; i < tailleTableau; i++){
+    /* printf("\nOn a d = %d et nb de monome de degre au plus d : %d\n Les voici : \n", d, nbMonomes);
+    for (int i = 0; i < nbMonomes; i++){
         printf("%ld, ", tableauMonomesC[i]);
     }
  */
