@@ -158,11 +158,10 @@ unsigned long* tableauMonomes(unsigned int n, unsigned int d){
     for (unsigned int i = 0; i <= d; i++){
         tailleTableau = tailleTableau + binomial(n, i);
     }
-
-    unsigned long* tableau = (unsigned long*)malloc(tailleTableau * sizeof(unsigned int));
+    unsigned long* tableau = (unsigned long*)malloc((tailleTableau+1) * sizeof(unsigned long));
     unsigned int indice = 0;
     unsigned int nbTotal = puissance(2, n);
-    for (unsigned int i = 0; i <= nbTotal; i++){
+    for (unsigned long i = 0; i <= nbTotal; i++){
         if(degreMonome(i, n) <= d){
             tableau[indice] = i;
             indice++;
@@ -171,66 +170,90 @@ unsigned long* tableauMonomes(unsigned int n, unsigned int d){
     return tableau;
 }
 
-unsigned long** constructMatrice(unsigned long* vecteurValeurs, int n, unsigned int nbMonomes, unsigned int* tableauMonomesC){
-    unsigned long** matrice = (unsigned long**)calloc(nbMonomes + 1, sizeof(unsigned long*));
-    
+unsigned long** constructMatrice(unsigned long* vecteurValeurs, int n, unsigned int nbMonomes, unsigned long* tableauMonomesC){
+    int poids = (int)vecteurValeurs[0];
+    unsigned long** matrice = (unsigned long**)malloc(nbMonomes*sizeof(unsigned long*));
+    for (unsigned long i = 0; i < nbMonomes; i++){
+        matrice[i] = (unsigned long*)malloc((poids+1) * sizeof(unsigned long));
+        matrice[i][0] = tableauMonomesC[i];
+        for (int j = 1; j <= poids; j++){
+            if(supTest(vecteurValeurs[j], tableauMonomesC[i], n) == 1){
+                matrice[i][j] = 1;
+            }
+            else{
+                matrice[i][j] = 0;
+            }
+        }
+    }
     return matrice;
+}
+
+void elimGauss(unsigned long** matrice, unsigned int nbMonomes, int poids, int n){
+
+}
+
+void effacerMatrice(unsigned long** matrice, unsigned int nbMonomes){
+    for(unsigned int i = 0; i < nbMonomes; i++){
+        free(matrice[i]);
+    }
+    free(matrice);
+}
+
+void afficherMatrice(unsigned long** matrice, unsigned int nbMonomes, int poids){
+    printf("\n");
+    for(int i = 0; i < nbMonomes; i++){
+        printf("[");
+        for (int j = 0; j <= poids; j++){
+            printf("%ld, ", matrice[i][j]);
+        }
+        printf("]\n");
+    }
 }
 
 /*  Fonctions principale qui prend comme arguments :
         - Nom d'un fichier
         - Le degré souhaité */
-
 int main(int argc, char *argv[]) {
-    // Vérification du nombre d'arguments
+    /* Vérification du nombre d'arguments */
     int nb_arg_attendu = 3;
     if (argc != nb_arg_attendu) {
         printf("Erreur : nombre d'arguments invalide\n");
         return 1;
     }
 
-    // Ouverture du fichier
+    /* Ouverture du fichier */
     FILE* fichier = fopen(argv[1], "r");
     if (fichier == NULL) {
         printf("Erreur : Ouverture impossible du fichier - (fichier introuvable)\n");
         return 2;
     }
 
-    // Lecture de n (le nombre de variables de notre fonction ANF)
+    /* Lecture de n (le nombre de variables de notre fonction ANF) */
     int n = lectureNombre(fichier);
     printf("\nNombre de variables de l'ANF : n = %d\n", n);
 
-    // Lecture de l'ANF
+    /* Lecture de l'ANF */
     unsigned short* tableau = lectureANF(&n, fichier);
     if(tableau == NULL){
         printf("Erreur : Lecture de l'ANF impossible (revoir fichier contenant ANF)\n");
         return 4;
     }
 
-    // Calcul du vecteur de valeurs (et le poids de Hamming qui se situe en début de liste)
+    /* Calcul du vecteur de valeurs (et le poids de Hamming qui se situe en début de liste) */
     unsigned long* vectValeurs = vecteurValeurs(tableau, n);
+    int poids = (int)vectValeurs[0];
 
     // Affichage de l'ANF
     /* affichageANF(tableau, n); */
 
-    // Test de supériorité
-    /* int a = 0b1101;
-    int b = 0b1010;
-    int t = supTest(a, b, n);
-    printf("Test de supériorité : %d\n", t); */
-
-    // Calcul de la valeur de l'ANF pour x = 0b1101
-    /* int x = 0b1111;
-    int resultat = valeurANF(tableau, n, x);   
-    printf("Valeur de l'ANF pour x = 0b1101 : %d\n", resultat); */
-
-    // Affichage du vecteur de valeurs
-    printf("\nPoids de Hamming = %ld. Vecteur de valeurs de l'ANF : \n[", vectValeurs[0]);
+    /* Affichage du vecteur de valeurs (support de f, ainsi que son poids) */
+    printf("\nPoids de Hamming de f = %d. \nVecteur de valeurs de l'ANF (support de f) : [", (int)vectValeurs[0]);
     for (int i = 1; i <= vectValeurs[0]; i++) {
-        printf("%ld, ", vectValeurs[i]);
+        printf(" %ld ", vectValeurs[i]);
     }
     printf("]\n");
 
+    /* Calcul de la matrice des monomes de degré au plus d  */
     unsigned int d = atoi(argv[2]);
     unsigned int nbMonomes = 0;
     for (unsigned int i = 0; i <= d; i++){
@@ -238,17 +261,27 @@ int main(int argc, char *argv[]) {
     }
     unsigned long* tableauMonomesC = tableauMonomes(n, d);
 
-    /* printf("\nOn a d = %d et nb de monome de degre au plus d : %d\n Les voici : \n", d, nbMonomes);
+    /* Affichage des monomes de degré au plus d */
+    printf("\nOn a d = %d et nb de monome de degre au plus d : %d\nLes voici : [", d, nbMonomes);
     for (int i = 0; i < nbMonomes; i++){
-        printf("%ld, ", tableauMonomesC[i]);
+        printf(" %ld ", tableauMonomesC[i]);
     }
- */
+    printf("]\n");
+    
+
+    unsigned long** matrice = constructMatrice(vectValeurs, n, nbMonomes, tableauMonomesC);
+    
+    /* Affichage de la matrice de départ (avant pivot de Gauss) */
+    afficherMatrice(matrice, nbMonomes, poids);
+
+   
 
 
 
 
-
+    /* Libération de la mémoire */
     fclose(fichier);
+    effacerMatrice(matrice, nbMonomes);
     free(tableau);
     free(vectValeurs);
     free(tableauMonomesC);
