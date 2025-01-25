@@ -83,6 +83,51 @@ void affichageANF(unsigned short* tableau, unsigned int n){
     }
 }
 
+int supTest(int a, int b, int n){
+    int t = 1;
+    for (int i = 0; i < n; i++) {
+        if ((a & (1 << i)) < (b & (1 << i))) {
+            t = 0;
+            break;
+        }
+    }
+    return t;
+}
+
+int valeurANF(unsigned short* tableau, unsigned int n, unsigned int x){
+    int resultat = 0;
+    for (int i = 0; i < puissance(2, n); i++) {
+        if (tableau[i] == 0) {
+            continue;
+        }
+        if (supTest(x, i, n)) {
+            resultat = resultat ^ tableau[i];   // Equivaut à ajout puis réduction modulo 2
+        }
+    }
+    return resultat;
+}
+
+unsigned long* vecteurValeurs(unsigned short* tableau, unsigned int n){
+    unsigned long* vecteur = calloc(puissance(2, n) + 1, sizeof(unsigned long));
+    long poidsHamming = 0;
+    if(vecteur == NULL){
+        return NULL;
+    }
+    int imageActuelle;
+    int curseur = 1;
+    for (int i = 0; i < puissance(2, n); i++) {
+        imageActuelle = valeurANF(tableau, n, i);
+        if (imageActuelle == 1) {
+            vecteur[curseur] = i;
+            curseur += 1;
+            poidsHamming += 1;
+        }
+    }
+    vecteur = realloc(vecteur, (poidsHamming + 1) * sizeof(unsigned long));
+    vecteur[0] = poidsHamming;
+    return vecteur;
+}
+
 /*  Fonctions principale qui prend comme arguments :
         - Nom d'un fichier
         - Le degré souhaité */
@@ -113,12 +158,34 @@ int main(int argc, char *argv[]) {
         return 4;
     }
 
+    // Calcul du vecteur de valeurs (et le poids de Hamming qui se situe en début de liste)
+    unsigned long* vectValeurs = vecteurValeurs(tableau, n);
+
     // Affichage de l'ANF
     /* affichageANF(tableau, n); */
+
+    // Test de supériorité
+    /* int a = 0b1101;
+    int b = 0b1010;
+    int t = supTest(a, b, n);
+    printf("Test de supériorité : %d\n", t); */
+
+    // Calcul de la valeur de l'ANF pour x = 0b1101
+    /* int x = 0b1111;
+    int resultat = valeurANF(tableau, n, x);   
+    printf("Valeur de l'ANF pour x = 0b1101 : %d\n", resultat); */
+
+    // Affichage du vecteur de valeurs
+    printf("\nPoids de Hamming = %ld. Vecteur de valeurs de l'ANF : \n[", vectValeurs[0]);
+    for (int i = 1; i <= vectValeurs[0]; i++) {
+        printf("%ld, ", vectValeurs[i]);
+    }
+    printf("]\n");
 
     
 
     fclose(fichier);
     free(tableau);
+    free(vectValeurs);
     return 0;
 }
