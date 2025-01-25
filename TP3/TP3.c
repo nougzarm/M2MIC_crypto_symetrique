@@ -21,15 +21,17 @@ unsigned int lectureNombre(FILE* fichier){
 }
 
 unsigned int lectureMonome(FILE* fichier, char nomVariable){
-    unsigned int monome = 0;
     int ch = fgetc(fichier);
+    if (ch == '1') {
+        return 0;
+    }
+    unsigned int monome = 0;
     while(ch == nomVariable){
         ch = lectureNombre(fichier);
         monome = monome + puissance(2, ch - 1);
         ch = fgetc(fichier);
     }
     fseek(fichier, -1, SEEK_CUR);
-    printf("\nMonome lu %d", monome);
     return monome;
 }
 
@@ -49,13 +51,15 @@ unsigned short* lectureANF(unsigned int* n, FILE* fichier){
     fseek(fichier, -1, SEEK_CUR);
 
     int t = 0;
+    int proCh;
     int monomeActuel;
     while(t == 0){
         monomeActuel = lectureMonome(fichier, nomVariable);
-        printf("\n%c\n", monomeActuel);
+        printf("Monome actuel : %d\n", monomeActuel);
         tableau[monomeActuel] = 1;
         fseek(fichier, 3, SEEK_CUR);
-        if(fgetc(fichier) != nomVariable){
+        proCh = fgetc(fichier);
+        if(proCh != nomVariable && proCh != '1'){
             t = 1;
         }
         else{
@@ -63,6 +67,20 @@ unsigned short* lectureANF(unsigned int* n, FILE* fichier){
         }
     }
     return tableau;
+}
+
+void affichageANF(unsigned short* tableau, unsigned int n){
+    for (int i = 0; i < puissance(2, n); i++) {
+        if (tableau[i] == 0) {
+            continue;
+        }
+        for (int j = 0; j < n; j++) {
+            if (i & (1 << j)) {
+                printf("x%d", j + 1);
+            }
+        }
+        printf(" = %d\n", tableau[i]);
+    }
 }
 
 /*  Fonctions principale qui prend comme arguments :
@@ -87,7 +105,6 @@ int main(int argc, char *argv[]) {
     // Lecture de n (le nombre de variables de notre fonction ANF)
     int n = lectureNombre(fichier);
     printf("\nNombre de variables de l'ANF : n = %d\n", n);
-    rewind(fichier);
 
     // Lecture de l'ANF
     unsigned short* tableau = lectureANF(&n, fichier);
@@ -95,6 +112,11 @@ int main(int argc, char *argv[]) {
         printf("Erreur : Lecture de l'ANF impossible (revoir fichier contenant ANF)\n");
         return 4;
     }
+
+    // Affichage de l'ANF
+    /* affichageANF(tableau, n); */
+
+    
 
     fclose(fichier);
     free(tableau);
