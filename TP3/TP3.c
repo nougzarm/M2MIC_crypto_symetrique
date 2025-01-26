@@ -174,22 +174,17 @@ unsigned long** constructMatrice(unsigned long* vecteurValeurs, int n, unsigned 
     int poids = (int)vecteurValeurs[0];
     unsigned long** matrice = (unsigned long**)malloc(nbMonomes*sizeof(unsigned long*));
     for (unsigned long i = 0; i < nbMonomes; i++){
-        matrice[i] = (unsigned long*)malloc((poids+1) * sizeof(unsigned long));
-        matrice[i][0] = tableauMonomesC[i];
+        matrice[i] = (unsigned long*)malloc((poids) * sizeof(unsigned long));
         for (int j = 1; j <= poids; j++){
             if(supTest(vecteurValeurs[j], tableauMonomesC[i], n) == 1){
-                matrice[i][j] = 1;
+                matrice[i][j-1] = 1;
             }
             else{
-                matrice[i][j] = 0;
+                matrice[i][j-1] = 0;
             }
         }
     }
     return matrice;
-}
-
-void elimGauss(unsigned long** matrice, unsigned int nbMonomes, int poids, int n){
-
 }
 
 void effacerMatrice(unsigned long** matrice, unsigned int nbMonomes){
@@ -199,16 +194,72 @@ void effacerMatrice(unsigned long** matrice, unsigned int nbMonomes){
     free(matrice);
 }
 
-void afficherMatrice(unsigned long** matrice, unsigned int nbMonomes, int poids){
+void afficherMatrice(unsigned long** matrice, int nbLignes, int nbColonnes){
     printf("\n");
-    for(int i = 0; i < nbMonomes; i++){
+    for(int i = 0; i < nbLignes; i++){
         printf("[");
-        for (int j = 0; j <= poids; j++){
-            printf("%ld, ", matrice[i][j]);
+        for (int j = 0; j < nbColonnes; j++){
+            printf(" %ld ", matrice[i][j]);
         }
         printf("]\n");
     }
 }
+
+void ajoutLignes(unsigned long** matrice, int l1, int l2, int nbLignes, int nbColonnes){
+    for (int j = 0; j < nbColonnes; j++){
+        matrice[l1][j] = matrice[l1][j] ^ matrice[l2][j] ;
+    }
+    return;
+}
+
+void echangeColonnes(unsigned long** matrice, int c1, int c2, int nbLignes, int nbColonnes){
+    int t;
+    for (int i = 0; i < nbLignes; i++){
+        t = matrice[i][c1]; 
+        matrice[i][c1] = matrice[i][c2];
+        matrice[i][c2] = t;
+    }
+    return;
+}
+
+unsigned long** elimGauss(unsigned long** matrice, unsigned int nbLignes, int nbColonnes, int n){
+    // Initialisation de la matrice identité
+    unsigned long** T = (unsigned long**)calloc(nbLignes, sizeof(unsigned long*));
+    for (int i = 0; i < nbLignes; i++){
+        T[i] = (unsigned long*)calloc(nbLignes, sizeof(unsigned long));
+        T[i][i] = 1;
+    }
+
+    int examined_rows = 0;
+    int j;
+    for(int i = 0; i < nbLignes-1; i++){
+        j = -1;
+        for (int j_prime = examined_rows; j < nbColonnes; j++){
+            if(matrice[i][j_prime] != 0){
+                j = j_prime;
+                break;
+            }
+        }
+        if(j == -1){
+            // la ligne i est nulle (stocker cette info dans une liste...)
+        }
+        else{
+            if(i != j){
+                echangeColonnes(matrice, i, j, nbLignes, nbColonnes);
+            }
+            for (int l = i+1; l < nbLignes; l++){
+                if(matrice[l][i] != 0){
+                    ajoutLignes(matrice, l, i, nbLignes, nbColonnes);
+                    ajoutLignes(T, l, i, nbLignes, nbLignes);
+                }
+            }
+            examined_rows++;
+        }
+    }
+    return T;
+}
+
+
 
 /*  Fonctions principale qui prend comme arguments :
         - Nom d'un fichier
@@ -274,10 +325,10 @@ int main(int argc, char *argv[]) {
     /* Affichage de la matrice de départ (avant pivot de Gauss) */
     afficherMatrice(matrice, nbMonomes, poids);
 
-   
+    unsigned long** T = elimGauss(matrice, nbMonomes, poids, n);
 
-
-
+    afficherMatrice(matrice, nbMonomes, poids);
+    afficherMatrice(T, nbMonomes, nbMonomes);
 
     /* Libération de la mémoire */
     fclose(fichier);
@@ -287,3 +338,6 @@ int main(int argc, char *argv[]) {
     free(tableauMonomesC);
     return 0;
 }
+
+/*  Modifier la fonction de construction de la première matrice, pour enlever la description des monomes en débuts de lignes
+    puis continuer pivot de gauss */
