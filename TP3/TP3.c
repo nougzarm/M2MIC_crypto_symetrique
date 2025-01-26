@@ -1,6 +1,6 @@
 #include "TP3.h"
 
-int puissance(int x, int n){
+unsigned int puissance(int x, unsigned int n){
     int resultat = 1;
     for(int i = 0; i < n; i++){
         resultat *= x;
@@ -8,6 +8,80 @@ int puissance(int x, int n){
     return resultat;
 }
 
+
+/*  |----------------------------------------------------------------------------------------------------------------|
+    |----------------------------------------------------------------------------------------------------------------|
+    |                                            Initialisation de ANF                                               |
+    |----------------------------------------------------------------------------------------------------------------|
+    |----------------------------------------------------------------------------------------------------------------|
+ */
+int init_ANF(ANF* f, unsigned int n){
+    f->nbVar = n;
+    f->monome = (unsigned short*)calloc(puissance(2, f->nbVar), sizeof(unsigned short));
+    f->support = NULL;
+    f->poids = -1;
+    return 0;
+}
+
+int init_ANF_copie(ANF* g, ANF* f){
+    g->nbVar = f->nbVar;
+    unsigned int borne = puissance(2, g->nbVar);
+    g->monome = (unsigned short*)calloc(puissance(2, borne), sizeof(unsigned short));
+    for (int i = 0; i < borne; i++){
+        g->monome[i] = f->monome[i];
+    }
+    g->support = NULL;
+    g->poids = -1;
+    return 0;
+}
+
+
+/*  |----------------------------------------------------------------------------------------------------------------|
+    |----------------------------------------------------------------------------------------------------------------|
+    |                                           Affichage de ANF (et monome)                                         |
+    |----------------------------------------------------------------------------------------------------------------|
+    |----------------------------------------------------------------------------------------------------------------|
+ */
+int afficher_monome(int monome, unsigned int n){
+    if(monome == 0){
+        printf("1");
+    }
+    for(int i = 0; i < n; i++){
+        if((monome >> i) & 1 == 1){
+            printf("x%d", i+1);
+        }
+    }
+    return 0;
+}
+
+int afficherANF(ANF* f){
+    unsigned int nbMax = puissance(2, f->nbVar);
+    for (int i = 0; i < nbMax; i++) {
+        if (f->monome[i] != 0) {
+            afficher_monome(i, f->nbVar);
+            printf(" + ");
+        }
+    }
+    return 0;
+}
+
+int vider_ANF(ANF* f){
+    if(f->monome != NULL){
+        free(f->monome);
+    }
+    if(f->support != NULL){
+        free(f->support);
+    }
+    return 0;
+}
+
+
+/*  |----------------------------------------------------------------------------------------------------------------|
+    |----------------------------------------------------------------------------------------------------------------|
+    |                                    Lecture de ANF à partir d'un fichier                                        |
+    |----------------------------------------------------------------------------------------------------------------|
+    |----------------------------------------------------------------------------------------------------------------|
+ */
 unsigned int lectureNombre(FILE* fichier){
     unsigned int nombre = 0;
     int ch = fgetc(fichier);
@@ -35,12 +109,8 @@ unsigned int lectureMonome(FILE* fichier, char nomVariable){
     return monome;
 }
 
-unsigned short* lectureANF(unsigned int* n, FILE* fichier){
-    unsigned int tailleTableau = puissance(2, *n);
-    unsigned short* tableau = calloc(tailleTableau, sizeof(unsigned short));
-    if(tableau == NULL){
-        return NULL;
-    }
+int lectureANF(ANF* f, FILE* fichier){
+    unsigned int tailleTableau = puissance(2, f->nbVar);
 
     // Ignorer la première ligne qui contient le nombre de variables n
     char bufferCorbeille[256];
@@ -56,7 +126,7 @@ unsigned short* lectureANF(unsigned int* n, FILE* fichier){
     while(t == 0){
         monomeActuel = lectureMonome(fichier, nomVariable);
         printf("Monome actuel : %d\n", monomeActuel);
-        tableau[monomeActuel] = 1;
+        f->monome[monomeActuel] = 1;
         fseek(fichier, 3, SEEK_CUR);
         proCh = fgetc(fichier);
         if(proCh != nomVariable && proCh != '1'){
@@ -66,23 +136,16 @@ unsigned short* lectureANF(unsigned int* n, FILE* fichier){
             fseek(fichier, -1, SEEK_CUR);
         }
     }
-    return tableau;
+    return 0;
 }
 
-void affichageANF(unsigned short* tableau, unsigned int n){
-    for (int i = 0; i < puissance(2, n); i++) {
-        if (tableau[i] == 0) {
-            continue;
-        }
-        for (int j = 0; j < n; j++) {
-            if (i & (1 << j)) {
-                printf("x%d", j + 1);
-            }
-        }
-        printf(" = %d\n", tableau[i]);
-    }
-}
 
+/*  |----------------------------------------------------------------------------------------------------------------|
+    |----------------------------------------------------------------------------------------------------------------|
+    |                                               Support d'une ANF                                                |
+    |----------------------------------------------------------------------------------------------------------------|
+    |----------------------------------------------------------------------------------------------------------------|
+*/
 int supTest(int a, int b, int n){
     int t = 1;
     for (int i = 0; i < n; i++) {
@@ -94,40 +157,51 @@ int supTest(int a, int b, int n){
     return t;
 }
 
-int valeurANF(unsigned short* tableau, unsigned int n, unsigned int x){
+int imageANF(ANF* f, unsigned int x){
     int resultat = 0;
-    for (int i = 0; i < puissance(2, n); i++) {
-        if (tableau[i] == 0) {
+    unsigned int n = f->nbVar;
+    unsigned int nbMax = puissance(2, n);
+    for (int i = 0; i < nbMax; i++) {
+        if (f->monome[i] == 0) {
             continue;
         }
         if (supTest(x, i, n)) {
-            resultat = resultat ^ tableau[i];   // Equivaut à ajout puis réduction modulo 2
+            resultat = resultat ^ f->monome[i];   // Equivaut à ajout puis réduction modulo 2
         }
     }
     return resultat;
 }
 
-unsigned long* vecteurValeurs(unsigned short* tableau, unsigned int n){
-    unsigned long* vecteur = calloc(puissance(2, n) + 1, sizeof(unsigned long));
+int supportANF(ANF* f){
+    unsigned int n = f->nbVar;
+    unsigned int nbMax = puissance(2, n);
+    f->support = calloc(nbMax + 1, sizeof(unsigned long));
     long poidsHamming = 0;
-    if(vecteur == NULL){
-        return NULL;
+    if(f->support == NULL){
+        1;
     }
     int imageActuelle;
-    int curseur = 1;
-    for (int i = 0; i < puissance(2, n); i++) {
-        imageActuelle = valeurANF(tableau, n, i);
+    int curseur = 0;
+    for (int i = 0; i < nbMax; i++) {
+        imageActuelle = imageANF(f, i);
         if (imageActuelle == 1) {
-            vecteur[curseur] = i;
+            f->support[curseur] = i;
             curseur += 1;
             poidsHamming += 1;
         }
     }
-    vecteur = realloc(vecteur, (poidsHamming + 1) * sizeof(unsigned long));
-    vecteur[0] = poidsHamming;
-    return vecteur;
+    f->support = realloc(f->support, (poidsHamming + 1) * sizeof(unsigned long));
+    f->poids = poidsHamming;
+    return 0;
 }
 
+
+/*  |----------------------------------------------------------------------------------------------------------------|
+    |----------------------------------------------------------------------------------------------------------------|
+    |                           Initialisation/définition/gestion de bases de monome                                 |
+    |----------------------------------------------------------------------------------------------------------------|
+    |----------------------------------------------------------------------------------------------------------------|
+*/
 unsigned int binomial(unsigned int n, unsigned int k){
     if (k > n) return 0;
     if (k == 0 || k == n) return 1;
@@ -153,110 +227,158 @@ int degreMonome(unsigned int m, unsigned int n){
     return deg;
 }
 
-unsigned long* tableauMonomes(unsigned int n, unsigned int d){
+int init_baseMonomes(baseMonomes* B, unsigned int n, unsigned int d){
     unsigned int tailleTableau = 0;
     for (unsigned int i = 0; i <= d; i++){
         tailleTableau = tailleTableau + binomial(n, i);
     }
-    unsigned long* tableau = (unsigned long*)malloc((tailleTableau+1) * sizeof(unsigned long));
+    B->degMax = d;
+    B->nbVar = n;
+    B->nbMonomes = tailleTableau;
+    B->monome = (unsigned long*)malloc((tailleTableau+1) * sizeof(unsigned long));
+
     unsigned int indice = 0;
     unsigned int nbTotal = puissance(2, n);
     for (unsigned long i = 0; i <= nbTotal; i++){
         if(degreMonome(i, n) <= d){
-            tableau[indice] = i;
+            B->monome[indice] = i;
             indice++;
         }
     }
-    return tableau;
+    return 0;
 }
 
-unsigned long** constructMatrice(unsigned long* vecteurValeurs, int n, unsigned int nbMonomes, unsigned long* tableauMonomesC){
-    int poids = (int)vecteurValeurs[0];
-    unsigned long** matrice = (unsigned long**)malloc(nbMonomes*sizeof(unsigned long*));
-    for (unsigned long i = 0; i < nbMonomes; i++){
-        matrice[i] = (unsigned long*)malloc((poids) * sizeof(unsigned long));
-        for (int j = 1; j <= poids; j++){
-            if(supTest(vecteurValeurs[j], tableauMonomesC[i], n) == 1){
-                matrice[i][j-1] = 1;
-            }
-            else{
-                matrice[i][j-1] = 0;
-            }
-        }
+int vider_baseMonomes(baseMonomes* B){
+    if(B->monome != NULL){
+        free(B->monome);
     }
-    return matrice;
+    return 0;
 }
 
-void effacerMatrice(unsigned long** matrice, unsigned int nbMonomes){
-    for(unsigned int i = 0; i < nbMonomes; i++){
-        free(matrice[i]);
+
+/*  |----------------------------------------------------------------------------------------------------------------|
+    |----------------------------------------------------------------------------------------------------------------|
+    |                                     Initialisation/gestion de matrices                                         |
+    |----------------------------------------------------------------------------------------------------------------|
+    |----------------------------------------------------------------------------------------------------------------|
+*/
+int init_matrice(matrice* M, unsigned int nbLignes, unsigned int nbColonnes){
+    M->nbLignes = nbLignes;
+    M->nbColonnes = nbColonnes;
+    M->coefficient = (unsigned long**)malloc(nbLignes*sizeof(unsigned long*));
+    for (unsigned int i = 0; i < nbLignes; i++){
+        M->coefficient[i] = (unsigned long*)malloc((nbColonnes) * sizeof(unsigned long));
     }
-    free(matrice);
+    return 0;
 }
 
-void afficherMatrice(unsigned long** matrice, int nbLignes, int nbColonnes){
+int vider_matrice(matrice* M){
+    for(unsigned int i = 0; i < M->nbLignes; i++){
+        free(M->coefficient[i]);
+    }
+    free(M->coefficient);
+}
+
+void afficher_matrice(matrice* M){
     printf("\n");
-    for(int i = 0; i < nbLignes; i++){
+    for(int i = 0; i < M->nbLignes; i++){
         printf("[");
-        for (int j = 0; j < nbColonnes; j++){
-            printf(" %ld ", matrice[i][j]);
+        for (int j = 0; j < M->nbColonnes; j++){
+            printf(" %ld ", M->coefficient[i][j]);
         }
         printf("]\n");
     }
 }
 
-void ajoutLignes(unsigned long** matrice, int l1, int l2, int nbLignes, int nbColonnes){
-    for (int j = 0; j < nbColonnes; j++){
-        matrice[l1][j] = matrice[l1][j] ^ matrice[l2][j] ;
+int matriceANF(matrice* M, ANF* f, baseMonomes* B){
+    unsigned int n = f->nbVar;
+    for (unsigned int i = 0; i < M->nbLignes; i++){
+        for (int j = 0; j < M->nbColonnes; j++){
+            if(supTest(f->support[j], B->monome[i], n) == 1){
+                M->coefficient[i][j] = 1;
+            }
+            else{
+                M->coefficient[i][j] = 0;
+            }
+        }
+    }
+    return 0;
+}
+
+void ajoutLignes(matrice* M, int l1, int l2){
+    for (int j = 0; j < M->nbColonnes; j++){
+        M->coefficient[l1][j] = M->coefficient[l1][j] ^ M->coefficient[l2][j] ;
     }
     return;
 }
 
-void echangeColonnes(unsigned long** matrice, int c1, int c2, int nbLignes, int nbColonnes){
+void echangeLignes(matrice* M, int l1, int l2){
     int t;
-    for (int i = 0; i < nbLignes; i++){
-        t = matrice[i][c1]; 
-        matrice[i][c1] = matrice[i][c2];
-        matrice[i][c2] = t;
+    for (int j = 0; j < M->nbColonnes; j++){
+        t = M->coefficient[l1][j];
+        M->coefficient[l1][j] = M->coefficient[l2][j];
+        M->coefficient[l2][j] = t;
     }
     return;
 }
 
-unsigned long** elimGauss(unsigned long** matrice, unsigned int nbLignes, int nbColonnes, int n){
+int nulliteLigne(matrice* M, int l, int colonneDepart){
+    for(int j = colonneDepart; j < M->nbColonnes; j++){
+        if (M->coefficient[l][j] == 1){
+            return j;
+        }
+    }
+    return -1;
+}
+
+void echangeColonnes(matrice* M, int c1, int c2){
+    int t;
+    for (int i = 0; i < M->nbLignes; i++){
+        t = M->coefficient[i][c1]; 
+        M->coefficient[i][c1] = M->coefficient[i][c2];
+        M->coefficient[i][c2] = t;
+    }
+    return;
+}
+
+int elimGauss(matrice* T, matrice* M, int n, int* nbLNulles){
+    printf("\nPivot de Gauss : nbLignes = %d, nbColonnes = %d", M->nbLignes, M->nbColonnes);
     // Initialisation de la matrice identité
-    unsigned long** T = (unsigned long**)calloc(nbLignes, sizeof(unsigned long*));
-    for (int i = 0; i < nbLignes; i++){
-        T[i] = (unsigned long*)calloc(nbLignes, sizeof(unsigned long));
-        T[i][i] = 1;
+    for (int i = 0; i < T->nbLignes; i++){
+        T->coefficient[i][i] = 1;
     }
 
+    int nbLignesNulles = 0;
     int examined_rows = 0;
     int j;
-    for(int i = 0; i < nbLignes-1; i++){
-        j = -1;
-        for (int j_prime = examined_rows; j < nbColonnes; j++){
-            if(matrice[i][j_prime] != 0){
-                j = j_prime;
-                break;
-            }
+
+    for(int i = 0; i < M->nbLignes-1; i++){
+        j = nulliteLigne(M, i, examined_rows);
+        printf("\n j=%d", j);
+        while(j == -1 && i <= M->nbLignes-1-nbLignesNulles){
+            printf("\n ligne nulle : i=%d", i);
+            echangeLignes(M, i, M->nbLignes-1-nbLignesNulles);
+            echangeLignes(T, i, M->nbLignes-1-nbLignesNulles);
+            nbLignesNulles++;
+            j = nulliteLigne(M, i, examined_rows);
         }
-        if(j == -1){
-            // la ligne i est nulle (stocker cette info dans une liste...)
-        }
-        else{
+        if (j != -1 && i < M->nbColonnes){
             if(i != j){
-                echangeColonnes(matrice, i, j, nbLignes, nbColonnes);
+                printf("\non fait l'échange de colonnes pour i = %d, j = %d", i, j);
+                echangeColonnes(M, i, j);
             }
             for (int l = i+1; l < nbLignes; l++){
-                if(matrice[l][i] != 0){
-                    ajoutLignes(matrice, l, i, nbLignes, nbColonnes);
-                    ajoutLignes(T, l, i, nbLignes, nbLignes);
+                if(M->coefficient[l][i] != 0){
+                    printf("\non fait l'échange de lignes pour i = %d, l = %d", i, l);
+                    ajoutLignes(M, l, i);
+                    ajoutLignes(T, l, i);
                 }
             }
             examined_rows++;
         }
     }
-    return T;
+    *nbLNulles = nbLignesNulles;
+    return 0;
 }
 
 
@@ -283,59 +405,70 @@ int main(int argc, char *argv[]) {
     int n = lectureNombre(fichier);
     printf("\nNombre de variables de l'ANF : n = %d\n", n);
 
-    /* Lecture de l'ANF */
-    unsigned short* tableau = lectureANF(&n, fichier);
-    if(tableau == NULL){
-        printf("Erreur : Lecture de l'ANF impossible (revoir fichier contenant ANF)\n");
-        return 4;
-    }
+    /* Initialisation des ANF f et g = f+1 */
+    ANF f;
+    ANF g;
 
-    /* Calcul du vecteur de valeurs (et le poids de Hamming qui se situe en début de liste) */
-    unsigned long* vectValeurs = vecteurValeurs(tableau, n);
-    int poids = (int)vectValeurs[0];
+    /* Lecture de l'ANF f à partir du fichier    */
+    init_ANF(&f, n);
+    lectureANF(&f, fichier);
 
-    // Affichage de l'ANF
-    /* affichageANF(tableau, n); */
+    /* Définition de g = f + 1  */
+    init_ANF_copie(&g, &f);
+    g.monome[0] = g.monome[0] ^ 1;
+
+    /*  Affichage de f et g  */
+    printf("f et g sous leurs formes ANF:\n - f = "); afficherANF(&f);
+    printf("\n - g = "); afficherANF(&g);
+
+    /* Calcul des support de f et g (et leurs poids) */
+    supportANF(&f);
+    supportANF(&g);
+    int poids_f = f.poids;
+    int poids_g = g.poids;
 
     /* Affichage du vecteur de valeurs (support de f, ainsi que son poids) */
-    printf("\nPoids de Hamming de f = %d. \nVecteur de valeurs de l'ANF (support de f) : [", (int)vectValeurs[0]);
-    for (int i = 1; i <= vectValeurs[0]; i++) {
-        printf(" %ld ", vectValeurs[i]);
+    /* printf("\nPoids de Hamming de f = %d. \nVecteur de valeurs de l'ANF (support de f) : [", poids_f);
+    for (int i = 0; i < poids_f; i++) {
+        printf(" %ld ", f.support[i]);
     }
-    printf("]\n");
+    printf("]\n"); */
 
-    /* Calcul de la matrice des monomes de degré au plus d  */
+    /* Calcul de la base des monomes de degré au plus d  */
     unsigned int d = atoi(argv[2]);
-    unsigned int nbMonomes = 0;
-    for (unsigned int i = 0; i <= d; i++){
-        nbMonomes = nbMonomes + binomial(n, i);
-    }
-    unsigned long* tableauMonomesC = tableauMonomes(n, d);
+    baseMonomes B;
+    init_baseMonomes(&B, n, d);
+    unsigned int nbMonomes = B.nbMonomes;
 
-    /* Affichage des monomes de degré au plus d */
-    printf("\nOn a d = %d et nb de monome de degre au plus d : %d\nLes voici : [", d, nbMonomes);
-    for (int i = 0; i < nbMonomes; i++){
-        printf(" %ld ", tableauMonomesC[i]);
-    }
-    printf("]\n");
+    /* Affichage de la base B */
     
-
-    unsigned long** matrice = constructMatrice(vectValeurs, n, nbMonomes, tableauMonomesC);
+    /* Matrice de f (resp. g) dont le noyau est l'annihilateur de f (resp. g) */
+    unsigned long** matrice_f = matriceANF(&f, &B);
+    unsigned long** matrice_g = matriceANF(&g, &B);
     
     /* Affichage de la matrice de départ (avant pivot de Gauss) */
-    afficherMatrice(matrice, nbMonomes, poids);
+    afficherMatrice(matrice_f, nbMonomes, poids_f);
 
-    unsigned long** T = elimGauss(matrice, nbMonomes, poids, n);
+    int dimANf;
+    int dimANg;
 
-    afficherMatrice(matrice, nbMonomes, poids);
-    afficherMatrice(T, nbMonomes, nbMonomes);
+    unsigned long** T_f = elimGauss(matrice_f, nbMonomes, poids_f, n, &dimANf);
+    unsigned long** T_g = elimGauss(matrice_g, nbMonomes, poids_g, n, &dimANg);
+
+    printf("\n Dim IN(f) = %d", dimANf);
+    printf("\n Dim IN(f) = %d", dimANg);
+
+    afficherMatrice(matrice_f, nbMonomes, poids_f);
+    afficherMatrice(T_f, nbMonomes, nbMonomes);
+
+    afficher_monome(6, n);
 
     /* Libération de la mémoire */
     fclose(fichier);
-    effacerMatrice(matrice, nbMonomes);
-    free(tableau);
-    free(vectValeurs);
-    free(tableauMonomesC);
+    vider_ANF(&f);
+    vider_ANF(&g);
+    vider_baseMonomes(&B);
+    effacerMatrice(matrice_f, nbMonomes);
     return 0;
 }
 

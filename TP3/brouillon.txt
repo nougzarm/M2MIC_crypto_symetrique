@@ -1,0 +1,40 @@
+unsigned long** elimGauss(unsigned long** matrice, unsigned int nbLignes, int nbColonnes, int n){
+    printf("\nPivot de Gauss : nbLignes = %d, nbColonnes = %d", nbLignes, nbColonnes);
+    // Initialisation de la matrice identité
+    unsigned long** T = (unsigned long**)calloc(nbLignes, sizeof(unsigned long*));
+    for (int i = 0; i < nbLignes; i++){
+        T[i] = (unsigned long*)calloc(nbLignes, sizeof(unsigned long));
+        T[i][i] = 1;
+    }
+
+    int examined_rows = 0;
+    int j;
+    for(int i = 0; i < nbLignes-1; i++){
+        j = -1;
+        for (int j_prime = examined_rows; j_prime < nbColonnes; j_prime++){
+            if(matrice[i][j_prime] != 0){
+                j = j_prime;
+                break;
+            }
+        }
+        if(j == -1){
+            printf("\n Une ligne nulle a été trouvée (ligne i = %d)\n", i);
+            // la ligne i est nulle (stocker cette info dans une liste...)
+        }
+        else{
+            if(i != j){
+                printf("\non fait l'échange de colonnes pour i = %d, j = %d", i, j);
+                echangeColonnes(matrice, i, j, nbLignes, nbColonnes);
+            }
+            for (int l = i+1; l < nbLignes; l++){
+                if(matrice[l][i] != 0){
+                    printf("\non fait l'échange de lignes pour i = %d, l = %d", i, l);
+                    ajoutLignes(matrice, l, i, nbLignes, nbColonnes);
+                    ajoutLignes(T, l, i, nbLignes, nbLignes);
+                }
+            }
+            examined_rows++;
+        }
+    }
+    return T;
+}
