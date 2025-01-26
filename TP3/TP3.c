@@ -78,10 +78,16 @@ int afficher_monome(int monome, unsigned int n){
 
 int afficherANF(ANF* f){
     unsigned int nbMax = puissance(2, f->nbVar);
+    int depart = 0;
     for (int i = 0; i < nbMax; i++) {
         if (f->monome[i] != 0) {
+            if(depart == 0){
+                depart = 1;
+            }
+            else{
+                printf(" + ");
+            }
             afficher_monome(i, f->nbVar);
-            printf(" + ");
         }
     }
     return 0;
