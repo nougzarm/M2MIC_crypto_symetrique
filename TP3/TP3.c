@@ -1,5 +1,27 @@
 #include "TP3.h"
 
+/*  @nougzarm
+    Crypto symétrique
+    M2 MIC 2024-2025    
+    
+    Sommaire:
+        (0. Structures)
+        1. Fonctions maths
+        2. Initialisation de ANF
+        3. Affichage de ANF(/monome)
+        4. Lecture d'ANF à partir d'un fichier
+        5. Support d'une ANF
+        6. (Initialisation/définition/gestion de) bases de monomes
+        7. Initialisation/gestion de matrices
+        8. Annihilateurs de ANF
+        9. Résolution - fonction principal  */
+
+/*  |----------------------------------------------------------------------------------------------------------------|
+    |----------------------------------------------------------------------------------------------------------------|
+    |                                              1. Fonctions maths                                                |
+    |----------------------------------------------------------------------------------------------------------------|
+    |----------------------------------------------------------------------------------------------------------------|
+*/
 unsigned int puissance(int x, unsigned int n){
     int resultat = 1;
     for(int i = 0; i < n; i++){
@@ -11,7 +33,7 @@ unsigned int puissance(int x, unsigned int n){
 
 /*  |----------------------------------------------------------------------------------------------------------------|
     |----------------------------------------------------------------------------------------------------------------|
-    |                                            Initialisation de ANF                                               |
+    |                                           2. Initialisation de ANF                                             |
     |----------------------------------------------------------------------------------------------------------------|
     |----------------------------------------------------------------------------------------------------------------|
  */
@@ -38,7 +60,7 @@ int init_ANF_copie(ANF* g, ANF* f){
 
 /*  |----------------------------------------------------------------------------------------------------------------|
     |----------------------------------------------------------------------------------------------------------------|
-    |                                           Affichage de ANF (et monome)                                         |
+    |                                          3. Affichage de ANF(/monome)                                          |
     |----------------------------------------------------------------------------------------------------------------|
     |----------------------------------------------------------------------------------------------------------------|
  */
@@ -78,7 +100,7 @@ int vider_ANF(ANF* f){
 
 /*  |----------------------------------------------------------------------------------------------------------------|
     |----------------------------------------------------------------------------------------------------------------|
-    |                                    Lecture de ANF à partir d'un fichier                                        |
+    |                                   4. Lecture d'ANF à partir d'un fichier                                       |
     |----------------------------------------------------------------------------------------------------------------|
     |----------------------------------------------------------------------------------------------------------------|
  */
@@ -125,7 +147,6 @@ int lectureANF(ANF* f, FILE* fichier){
     int monomeActuel;
     while(t == 0){
         monomeActuel = lectureMonome(fichier, nomVariable);
-        printf("Monome actuel : %d\n", monomeActuel);
         f->monome[monomeActuel] = 1;
         fseek(fichier, 3, SEEK_CUR);
         proCh = fgetc(fichier);
@@ -142,7 +163,7 @@ int lectureANF(ANF* f, FILE* fichier){
 
 /*  |----------------------------------------------------------------------------------------------------------------|
     |----------------------------------------------------------------------------------------------------------------|
-    |                                               Support d'une ANF                                                |
+    |                                              5. Support d'une ANF                                              |
     |----------------------------------------------------------------------------------------------------------------|
     |----------------------------------------------------------------------------------------------------------------|
 */
@@ -198,7 +219,7 @@ int supportANF(ANF* f){
 
 /*  |----------------------------------------------------------------------------------------------------------------|
     |----------------------------------------------------------------------------------------------------------------|
-    |                           Initialisation/définition/gestion de bases de monome                                 |
+    |                         6. (Initialisation/définition/gestion de) bases de monomes                             |
     |----------------------------------------------------------------------------------------------------------------|
     |----------------------------------------------------------------------------------------------------------------|
 */
@@ -258,16 +279,16 @@ int vider_baseMonomes(baseMonomes* B){
 
 /*  |----------------------------------------------------------------------------------------------------------------|
     |----------------------------------------------------------------------------------------------------------------|
-    |                                     Initialisation/gestion de matrices                                         |
+    |                                    7. Initialisation/gestion de matrices                                       |
     |----------------------------------------------------------------------------------------------------------------|
     |----------------------------------------------------------------------------------------------------------------|
 */
 int init_matrice(matrice* M, unsigned int nbLignes, unsigned int nbColonnes){
     M->nbLignes = nbLignes;
     M->nbColonnes = nbColonnes;
-    M->coefficient = (unsigned long**)malloc(nbLignes*sizeof(unsigned long*));
+    M->coefficient = (unsigned long**)calloc(nbLignes, sizeof(unsigned long*));
     for (unsigned int i = 0; i < nbLignes; i++){
-        M->coefficient[i] = (unsigned long*)malloc((nbColonnes) * sizeof(unsigned long));
+        M->coefficient[i] = (unsigned long*)calloc(nbColonnes, sizeof(unsigned long));
     }
     return 0;
 }
@@ -342,7 +363,6 @@ void echangeColonnes(matrice* M, int c1, int c2){
 }
 
 int elimGauss(matrice* T, matrice* M, int n, int* nbLNulles){
-    printf("\nPivot de Gauss : nbLignes = %d, nbColonnes = %d", M->nbLignes, M->nbColonnes);
     // Initialisation de la matrice identité
     for (int i = 0; i < T->nbLignes; i++){
         T->coefficient[i][i] = 1;
@@ -354,9 +374,7 @@ int elimGauss(matrice* T, matrice* M, int n, int* nbLNulles){
 
     for(int i = 0; i < M->nbLignes-1; i++){
         j = nulliteLigne(M, i, examined_rows);
-        printf("\n j=%d", j);
         while(j == -1 && i <= M->nbLignes-1-nbLignesNulles){
-            printf("\n ligne nulle : i=%d", i);
             echangeLignes(M, i, M->nbLignes-1-nbLignesNulles);
             echangeLignes(T, i, M->nbLignes-1-nbLignesNulles);
             nbLignesNulles++;
@@ -364,12 +382,10 @@ int elimGauss(matrice* T, matrice* M, int n, int* nbLNulles){
         }
         if (j != -1 && i < M->nbColonnes){
             if(i != j){
-                printf("\non fait l'échange de colonnes pour i = %d, j = %d", i, j);
                 echangeColonnes(M, i, j);
             }
-            for (int l = i+1; l < nbLignes; l++){
+            for (int l = i+1; l < M->nbLignes; l++){
                 if(M->coefficient[l][i] != 0){
-                    printf("\non fait l'échange de lignes pour i = %d, l = %d", i, l);
                     ajoutLignes(M, l, i);
                     ajoutLignes(T, l, i);
                 }
@@ -382,10 +398,28 @@ int elimGauss(matrice* T, matrice* M, int n, int* nbLNulles){
 }
 
 
+/*  |----------------------------------------------------------------------------------------------------------------|
+    |----------------------------------------------------------------------------------------------------------------|
+    |                                           8. Annihilateurs de ANF                                              |
+    |----------------------------------------------------------------------------------------------------------------|
+    |----------------------------------------------------------------------------------------------------------------|
+*/
+int vect_vers_ANF(ANF* h, unsigned long* vect, baseMonomes* B){
+    for(int j = 0; j < B->nbMonomes; j++){
+        if(vect[j] != 0){
+            h->monome[B->monome[j]] = 1;
+        }
+    }
+    return 0;
+}
 
-/*  Fonctions principale qui prend comme arguments :
-        - Nom d'un fichier
-        - Le degré souhaité */
+
+/*  |----------------------------------------------------------------------------------------------------------------|
+    |----------------------------------------------------------------------------------------------------------------|
+    |                                     9. Résolution - fonction principal                                         |
+    |----------------------------------------------------------------------------------------------------------------|
+    |----------------------------------------------------------------------------------------------------------------|
+*/
 int main(int argc, char *argv[]) {
     /* Vérification du nombre d'arguments */
     int nb_arg_attendu = 3;
@@ -403,7 +437,7 @@ int main(int argc, char *argv[]) {
 
     /* Lecture de n (le nombre de variables de notre fonction ANF) */
     int n = lectureNombre(fichier);
-    printf("\nNombre de variables de l'ANF : n = %d\n", n);
+    printf("CONFIGURATION :\n    Nombre total de variables n = %d\n", n);
 
     /* Initialisation des ANF f et g = f+1 */
     ANF f;
@@ -417,9 +451,8 @@ int main(int argc, char *argv[]) {
     init_ANF_copie(&g, &f);
     g.monome[0] = g.monome[0] ^ 1;
 
-    /*  Affichage de f et g  */
-    printf("f et g sous leurs formes ANF:\n - f = "); afficherANF(&f);
-    printf("\n - g = "); afficherANF(&g);
+    /*  Affichage de f  */
+    printf("    f = "); afficherANF(&f);
 
     /* Calcul des support de f et g (et leurs poids) */
     supportANF(&f);
@@ -427,50 +460,67 @@ int main(int argc, char *argv[]) {
     int poids_f = f.poids;
     int poids_g = g.poids;
 
-    /* Affichage du vecteur de valeurs (support de f, ainsi que son poids) */
-    /* printf("\nPoids de Hamming de f = %d. \nVecteur de valeurs de l'ANF (support de f) : [", poids_f);
-    for (int i = 0; i < poids_f; i++) {
-        printf(" %ld ", f.support[i]);
-    }
-    printf("]\n"); */
-
     /* Calcul de la base des monomes de degré au plus d  */
     unsigned int d = atoi(argv[2]);
     baseMonomes B;
     init_baseMonomes(&B, n, d);
     unsigned int nbMonomes = B.nbMonomes;
-
-    /* Affichage de la base B */
     
     /* Matrice de f (resp. g) dont le noyau est l'annihilateur de f (resp. g) */
-    unsigned long** matrice_f = matriceANF(&f, &B);
-    unsigned long** matrice_g = matriceANF(&g, &B);
-    
-    /* Affichage de la matrice de départ (avant pivot de Gauss) */
-    afficherMatrice(matrice_f, nbMonomes, poids_f);
+    matrice M1, M2, T1, T2;
+    init_matrice(&M1, nbMonomes, poids_f);
+    init_matrice(&M2, nbMonomes, poids_g);
+    matriceANF(&M1, &f, &B);
+    matriceANF(&M2, &g, &B);
 
+    /* Extraction de AN(f) et AN(f+1) (leurs bases respectives) */
     int dimANf;
     int dimANg;
+    init_matrice(&T1, nbMonomes, nbMonomes);
+    init_matrice(&T2, nbMonomes, nbMonomes);
+    elimGauss(&T1, &M1, n, &dimANf);
+    elimGauss(&T2, &M2, n, &dimANg);
 
-    unsigned long** T_f = elimGauss(matrice_f, nbMonomes, poids_f, n, &dimANf);
-    unsigned long** T_g = elimGauss(matrice_g, nbMonomes, poids_g, n, &dimANg);
-
-    printf("\n Dim IN(f) = %d", dimANf);
-    printf("\n Dim IN(f) = %d", dimANg);
-
-    afficherMatrice(matrice_f, nbMonomes, poids_f);
-    afficherMatrice(T_f, nbMonomes, nbMonomes);
-
-    afficher_monome(6, n);
+    /* Affichade de AN(f) et AN(f+1) */
+    printf("\n\nRESULTATS:");
+    printf("\n*************************************************");
+    if(dimANf == 0){
+        printf("AN(f) = {}");
+    }
+    else{
+        ANF baseANf[dimANf];
+        for(int i = 0; i < dimANf; i++){
+            init_ANF(&baseANf[i], n);
+            vect_vers_ANF(&baseANf[i], T1.coefficient[B.nbMonomes-1-i], &B);
+            printf("\n"); afficherANF(&baseANf[i]);
+            vider_ANF(&baseANf[i]);
+        }
+    }
+    printf("\n\nDimension de AN(f) = %d", dimANf);
+    printf("\n*************************************************");
+    if(dimANg == 0){
+        printf("\nAN(f+1) = {}");
+    }
+    else{
+        ANF baseANg[dimANg];
+        for(int i = 0; i < dimANg; i++){
+            init_ANF(&baseANg[i], n);
+            vect_vers_ANF(&baseANg[i], T2.coefficient[B.nbMonomes-1-i], &B);
+            printf("\n"); afficherANF(&baseANg[i]);
+            vider_ANF(&baseANg[i]);
+        }
+    }
+    printf("\n\nDimension de AN(f+1) = %d", dimANg);
+    printf("\n*************************************************\n");
 
     /* Libération de la mémoire */
     fclose(fichier);
     vider_ANF(&f);
     vider_ANF(&g);
     vider_baseMonomes(&B);
-    effacerMatrice(matrice_f, nbMonomes);
+    vider_matrice(&M1);
+    vider_matrice(&M2);
+    vider_matrice(&T1);
+    vider_matrice(&T2);
     return 0;
 }
-
-/*  Modifier la fonction de construction de la première matrice, pour enlever la description des monomes en débuts de lignes
-    puis continuer pivot de gauss */
