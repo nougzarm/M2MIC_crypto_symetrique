@@ -1,6 +1,6 @@
 PROG = TP4
 
-OBJS = TP3.o
+OBJS = TP4.o
 
 CC = gcc
 CPFLAGS = -Wall -Wpointer-arith -O2
