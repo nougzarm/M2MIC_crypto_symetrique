@@ -215,6 +215,21 @@ void test_implemGeffe(int N){
         initialisation de s3 qui |C-3N/4| < 1/b 
         avec C le nombre de t où s3 et z coincident, et N est la longueur de la liste z fournie  */
 
+/*  Voici une première fonction qui incrémente une liste de bit et qui nous sera utile pour la recherche
+    exhaustive   */
+int incrementer(liste* L){
+    int i = 0;
+    while(i < L->taille && L->valeur[i] == 1){
+        L->valeur[i] = 0;
+        i++;
+    }
+    if(i == L->taille){
+        return 1;   // On a atteint la fin de la liste et elle ne peut pas être incrémentée
+    }
+    L->valeur[i] = 1;
+    return 0;   // Cas où on a incrémenté la liste avec succès
+}
+
 int attaque_corr(liste* L1, liste* L2, liste* L3, liste* z, int borne){
 
 }
