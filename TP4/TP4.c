@@ -230,7 +230,105 @@ int incrementer(liste* L){
     return 0;   // Cas où on a incrémenté la liste avec succès
 }
 
+int z_val(int s1, int s2, int s3){
+    int result = s1*s2 + s2*s3 + s3;
+    result = result%2;
+    return result;
+}
+
 int attaque_corr(liste* L1, liste* L2, liste* L3, liste* z, int borne){
+    int N = z->taille;  // la longueur de z 
+    L3->taille = LFSR3.degre;
+    L3->valeur = calloc(L3->taille, sizeof(int));
+    liste s3;
+    lectureLFSR(&s3, &LFSR3, L3, N);    // calcul de la suite s3 correspondant à l'état initial L3
+    int C = 0;  // le nombre de t où s3 et z coincident
+    int succes = 0; // flag qu'on mettra à 1 si on a trouvé la bonne initialisation de s3
+    int incr = 0;
+    while(incr == 0 && succes == 0){
+        for(int i = 0; i < N; i++){
+            if(s3.valeur[i] == z->valeur[i]){
+                C++;
+            }
+        }
+        if(abs(C - 3*N/4) < 1/borne){
+            succes = 1;
+        }
+        else{
+            C = 0;
+            incr = incrementer(L3);
+            if(incr == 0){
+                free(s3.valeur);
+                lectureLFSR(&s3, &LFSR3, L3, N);
+            }
+        }
+    }
+    free(s3.valeur);
+    if(succes == 0){
+        return 1;  // On a pas trouvé la bonne initialisation de s3 (pb d'arrondis ?)
+    }
+
+    succes = 0;
+    C = 0;
+    incr = 0;
+    L1->taille = LFSR1.degre;
+    L1->valeur = calloc(L1->taille, sizeof(int));
+    liste s1;
+    lectureLFSR(&s1, &LFSR1, L1, N);
+    while(incr == 0 && succes == 0){
+        for(int i = 0; i < N; i++){
+            if(s1.valeur[i] == z->valeur[i]){
+                C++;
+            }
+        }
+        if(abs(C - 3*N/4) < 1/borne){
+            succes = 1;
+        }
+        else{
+            C = 0;
+            incr = incrementer(L1);
+            if(incr == 0){
+                free(s1.valeur);
+                lectureLFSR(&s1, &LFSR1, L1, N);
+            }
+        }
+    }
+    free(s1.valeur);
+    if(succes == 0){
+        return 2;  // On a pas trouvé la bonne initialisation de s1 (pb d'arrondis ?)
+    }
+
+    succes = 0;
+    C = 0;
+    incr = 0;
+    L2->taille = LFSR2.degre;
+    L2->valeur = calloc(L2->taille, sizeof(int));
+    liste s2;
+    lectureLFSR(&s2, &LFSR2, L2, N);
+    while(incr == 0 && succes == 0){
+        for(int i = 0; i < N; i++){
+            if(z_val(s1.valeur[i], s2.valeur[i], s3.valeur[i]) == z->valeur[i]){
+                C++;
+            }
+        }
+        if(abs(C - 3*N/4) < 1/borne){
+            succes = 1;
+        }
+        else{
+            C = 0;
+            incr = incrementer(L2);
+            if(incr == 0){
+                free(s2.valeur);
+                lectureLFSR(&s2, &LFSR2, L2, N);
+            }
+        }
+    }
+    free(s2.valeur);
+    if(succes == 0){
+        return 3;  // On a pas trouvé la bonne initialisation de s2 (pb d'arrondis ?)
+    }
+
+    return 0;   // On a trouvé les bonnes initialisations de s1, s2 et s3
 
 }
 
