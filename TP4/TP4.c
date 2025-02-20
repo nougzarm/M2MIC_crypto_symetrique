@@ -200,7 +200,18 @@ void test_implemGeffe(int N){
                 = (1/2)*(P(z(t)=0) + 1 - P(z(t)=0))
                 = 1/2   
             
-    Q6)     */
+    Q6) D'après la dépendance qu'on a vu, z(t) est égale à s3(t) pour 3/4 des valeurs de t 
+        (et pareil pour z(t) = s1(t)) ainsi on commence par faire une recherche exhaustive sur 
+        l'état initial de s3. Ainsi pour les 2^l3 initialisations possibles, on compare les 
+        valeurs de z(t) et s3(t) et si on a environ 3/4 des valeurs qui coincident alors on tient la
+        bonne initialisation. Pareil pour s1. Et pour finir, une fois qu'on a s3 et s1 on peut faire
+        une recherche exhaustive classique sur s2. Ce qui nous ramène à une compléxité de :
+            2^l1 + 2^l2 + 2^l3 ~= 2^13
+        qui est nettement mieux que 2^33 qu'on avait trouvé pour la recherche exhaustive classique
+        
+    Q7) Implémentons l'attaque précedente:*/
+
+
 
 int main(int argc, char *argv[]) {
     init__LFSR();
