@@ -255,7 +255,7 @@ int attaque_corr(liste* L1, liste* L2, liste* L3, liste* z, int borne){
                 C++;
             }
         }
-        diff = C - 3.0*N/4.0;
+        diff = (float)C - 3.0*(float)N/4.0;
         if(fabs(diff) <= b){
             succes = 1;
         }
@@ -286,7 +286,7 @@ int attaque_corr(liste* L1, liste* L2, liste* L3, liste* z, int borne){
                 C++;
             }
         }
-        diff = C - 3.0*N/4.0;
+        diff = (float)C - 3.0*(float)N/4.0;
         if(fabs(diff) <= b){
             succes = 1;
         }
@@ -373,12 +373,10 @@ int main(int argc, char *argv[]) {
     liste z;
     z.taille = 20;
     z.valeur = calloc(z.taille, sizeof(int));
-    z.valeur[0] = 1;
-    z.valeur[1] = 0;
-    z.valeur[2] = 1;
-    z.valeur[3] = 1;
-    z.valeur[4] = 0;
-    test_attaque_corr(&z, 10);
+    init__S(&z, z.taille);
+    z.valeur[9] = 1;
+    z.valeur[17] = 1;
+    test_attaque_corr(&z, 50);
     free(z.valeur);
 
     free__LFSR();
