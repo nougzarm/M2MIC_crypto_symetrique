@@ -247,13 +247,16 @@ int attaque_corr(liste* L1, liste* L2, liste* L3, liste* z, int borne){
     int C = 0;  // le nombre de t où s3 et z coincident
     int succes = 0; // flag qu'on mettra à 1 si on a trouvé la bonne initialisation de s3
     int incr = 0;
+    float b = 1.0/borne;
+    float diff;
     while(incr == 0 && succes == 0){
         for(int i = 0; i < N; i++){
             if(s3.valeur[i] == z->valeur[i]){
                 C++;
             }
         }
-        if(abs(C - 3*N/4) < 1/borne){
+        diff = C - 3.0*N/4.0;
+        if(fabs(diff) <= b){
             succes = 1;
         }
         else{
@@ -283,7 +286,8 @@ int attaque_corr(liste* L1, liste* L2, liste* L3, liste* z, int borne){
                 C++;
             }
         }
-        if(abs(C - 3*N/4) < 1/borne){
+        diff = C - 3.0*N/4.0;
+        if(fabs(diff) <= b){
             succes = 1;
         }
         else{
@@ -313,7 +317,8 @@ int attaque_corr(liste* L1, liste* L2, liste* L3, liste* z, int borne){
                 C++;
             }
         }
-        if(abs(C - 3*N/4) < 1/borne){
+        diff = (float)C - 3.0*(float)N/4.0;
+        if(fabs(diff) <= b){
             succes = 1;
         }
         else{
