@@ -209,9 +209,15 @@ void test_implemGeffe(int N){
             2^l1 + 2^l2 + 2^l3 ~= 2^13
         qui est nettement mieux que 2^33 qu'on avait trouvé pour la recherche exhaustive classique
         
-    Q7) Implémentons l'attaque précedente:*/
+    Q7) Implémentons l'attaque précedente. Ici les résultats des états initiaux seront stockés
+        dans L1, L2, et L3. On donnera à la fonction z, qui sera la suite des valeurs de z(t) 
+        et l'entier b=borne sera la précision de l'attaque souhaité. Ie on considérera qu'on a la bonne 
+        initialisation de s3 qui |C-3N/4| < 1/b 
+        avec C le nombre de t où s3 et z coincident, et N est la longueur de la liste z fournie  */
 
+int attaque_corr(liste* L1, liste* L2, liste* L3, liste* z, int borne){
 
+}
 
 int main(int argc, char *argv[]) {
     init__LFSR();
