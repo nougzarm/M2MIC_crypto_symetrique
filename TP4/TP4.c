@@ -168,6 +168,34 @@ void test_implemGeffe(int N){
     free(z.valeur);
 }
 
+
+/*  |----------------------------------------------------------------------------------------------------------------|
+    |----------------------------------------------------------------------------------------------------------------|
+    |                                                Attaque par corrélation                                         |
+    |----------------------------------------------------------------------------------------------------------------|
+    |----------------------------------------------------------------------------------------------------------------|
+*/
+/*  1.2 Attaque par corrélation  
+
+    Q3) Notons l1, l2, et l3 les tailles des états initiaux des trois LFSR que nous considérons 
+        Ici on a l1 = 13, l2 = 11 et l3 = 9
+        De plus, une recherche exhaustive pour déterminer l'état initial du générateur de Geffe
+        revient à faire une recherche exhaustive sur les états initiaux des trois LFSR. Ainsi 
+        la compléxité est 2^{l1+l2+l3} = 2^33   
+        
+    Q4) On rappelle que z(t) = s1(t)s2(t) + s2(t)s3(t) + s3(t) 
+        Commençons par remarquer que :
+            - z(t) = s3(t)  si s2(t) = 0 
+            - z(t) = s1(t)  si s2(t) = 1
+        Puis, d'autre part:
+        P(z(t)=s1(t))   = P(z(t)=s1(t) inter s2(t)=1) + P(z(t)=s1(t) inter s2(t)=0)
+                        = P(z(t)=s1(t) | s2(t)=1)*P(s2(t)=1) + P(z(t)=s1(t) | s2(t)=0)*P(s2(t)=0)
+                        = P(s1(t)=s1(t))*(1/2) + P(s3(t)=s1(t))*(1/2)
+                        = 1/2 + 1/4 = 3/4   
+        Et on calcule de la même manière P(z(t)=s3(t))
+        
+    Q5) */
+
 int main(int argc, char *argv[]) {
     init__LFSR();
     test_implemGeffe(20);
