@@ -155,12 +155,14 @@ void test_implemGeffe(int N){
     /*  La suite résultat */
     geffe(&z, &S1, &S2, &S3, N);
     /*  Affichage des résultats */
+    printf("------------------------------------------------------------\n");
     printf("Voici un test de l'implémentation de Geffe pour N = %d et les états initiaux suivants\n", N);
     printf("S1 = "); afficher_liste(&S1);
     printf("S2 = "); afficher_liste(&S2);
     printf("S3 = "); afficher_liste(&S3);
-    printf("On obtient la suite z (s) suivante :\n");
+    printf("\nOn obtient la suite z (s) suivante :\n");
     afficher_liste(&z);
+    printf("------------------------------------------------------------\n");
     /*  Libération de la mémoire  */
     free(S1.valeur);
     free(S2.valeur);
@@ -329,12 +331,51 @@ int attaque_corr(liste* L1, liste* L2, liste* L3, liste* z, int borne){
     }
 
     return 0;   // On a trouvé les bonnes initialisations de s1, s2 et s3
+}
 
+/*  Testons l'attaque précedente en l'appliquant à l'exemple de suite de z  */
+void test_attaque_corr(liste* z, int borne){
+    liste L1, L2, L3;
+    int res = attaque_corr(&L1, &L2, &L3, z, borne);
+    printf("------------------------------------------------------------\n");
+    printf("Test de l'implémentation de l'attaque par corrélation sur le générateur de Geffe :\n\n");
+    if(res == 0){
+        printf("L'attaque par corrélation s'est déroulée avec succès, voici les états initiaux trouvés :\n");
+        printf("L1 = "); afficher_liste(&L1);
+        printf("L2 = "); afficher_liste(&L2);
+        printf("L3 = "); afficher_liste(&L3);
+    }
+    else if(res == 1){
+        printf("L'attaque par corrélation a échoué, on n'a pas trouvé la bonne initialisation de s3\n");
+    }
+    else if(res == 2){
+        printf("L'attaque par corrélation a échoué, on n'a pas trouvé la bonne initialisation de s1\n");
+    }
+    else if(res == 3){
+        printf("L'attaque par corrélation a échoué, on n'a pas trouvé la bonne initialisation de s2\n");
+    }
+    printf("------------------------------------------------------------\n");
+    return;
 }
 
 int main(int argc, char *argv[]) {
     init__LFSR();
+
+    /*  test de m'implémentation du générateur de Geffe  */
     test_implemGeffe(20);
+
+    /*  Test de l'attaque par corrélation sur le générateur de Geffe */
+    liste z;
+    z.taille = 20;
+    z.valeur = calloc(z.taille, sizeof(int));
+    z.valeur[0] = 1;
+    z.valeur[1] = 0;
+    z.valeur[2] = 1;
+    z.valeur[3] = 1;
+    z.valeur[4] = 0;
+    test_attaque_corr(&z, 10);
+    free(z.valeur);
+
     free__LFSR();
     return 0;
 }
