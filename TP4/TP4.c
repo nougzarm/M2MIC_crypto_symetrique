@@ -194,7 +194,13 @@ void test_implemGeffe(int N){
                         = 1/2 + 1/4 = 3/4   
         Et on calcule de la même manière P(z(t)=s3(t))
         
-    Q5) */
+    Q5) On a: p = P(z(t)=x)
+                = P(x=0)*P(z(t)=x | x=0) + P(x=1)*P(z(t)=x | x=1)
+                = (1/2)*P(z(t)=0) + (1/2)*P(z(t)=1)
+                = (1/2)*(P(z(t)=0) + 1 - P(z(t)=0))
+                = 1/2   
+            
+    Q6)     */
 
 int main(int argc, char *argv[]) {
     init__LFSR();
