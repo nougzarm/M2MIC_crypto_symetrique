@@ -383,7 +383,30 @@ void test_attaque_corr(liste* z, int borne){
 */
 /*  2. Attaque contre CSS 
 
-    Q10)  */
+    Q10) Commençons par initialiser les deux LFSR vu dans le sujet du TP */
+
+LFSR LFSR1_CSS, LFSR2_CSS;
+
+/*  Fonction d'initialisation  */
+void init_LFSR_CSS(LFSR* L1, LFSR* L2){
+    L1->degre = 17;
+    L1->coeff = calloc(L1->degre + 1, sizeof(int));
+    L1->coeff[0] = 1;
+    L1->coeff[17] = 1;
+
+    L2->degre = 25;
+    L2->coeff = calloc(L2->degre + 1, sizeof(int));
+    L2->coeff[0] = 1;
+    L2->coeff[25] = 1;
+}
+
+/*  Sans oublier la libération de mémoire */
+void free_LFSR_CSS(LFSR* L1, LFSR* L2){
+    free(L1->coeff);
+    free(L2->coeff);
+}
+
+
 
 int main(int argc, char *argv[]) {
     init__LFSR();
